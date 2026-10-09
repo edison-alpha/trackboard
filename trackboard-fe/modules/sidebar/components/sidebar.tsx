@@ -14,7 +14,7 @@ import { cx } from "@/lib/cx";
 import { useStore } from "@/lib/store";
 import { signOut } from "@/modules/profile";
 import { setUi } from "@/modules/shell/lib/ui-store";
-import { ThemeSwitch } from "@/modules/theme";
+import { NoiseSwitch, ThemeSwitch } from "@/modules/theme";
 import { ancestorsOf, childrenOf, displayTitle, favoritesOf, pageHref, trashOf, usePageActions, usePages, useWorkspace } from "@/modules/workspace";
 import { drag } from "../lib/drag";
 import { setExpanded } from "../lib/expanded";
@@ -205,7 +205,10 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
             <Keyboard size={17} />
           </IconButton>
         </div>
-        <ThemeSwitch />
+        <div className="flex items-center gap-1">
+          <NoiseSwitch />
+          <ThemeSwitch className="flex-1" />
+        </div>
       </div>
     </div>
   );

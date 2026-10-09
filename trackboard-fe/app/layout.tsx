@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "katex/dist/katex.min.css";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
+import { PwaRegister } from "@/components/providers/pwa-register";
 
 /** SF Pro Rounded from the owner's brand files: the "modern rounded" voice (DESIGN.md). */
 const rounded = localFont({
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={rounded.variable} suppressHydrationWarning>
       <body>
         <AppProviders>{children}</AppProviders>
+        <PwaRegister />
       </body>
     </html>
   );

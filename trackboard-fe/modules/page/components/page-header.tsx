@@ -1,9 +1,9 @@
 "use client";
 
-import { ImageSquare, Smiley } from "@/components/icons";
+import { ArrowsHorizontal, Check, ImageSquare, Smiley, X } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { cx } from "@/lib/cx";
 import { formatDateTime, timeAgo } from "@/lib/time";
 import { usePageActions, usePeople, type PageMeta, type Person } from "@/modules/workspace";
@@ -77,33 +77,36 @@ export function PageCover({ page }: { page: PageMeta }) {
           <p className="glass pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-4 py-1.5 text-sm font-medium text-ink">
             Drag the image to reposition
           </p>
-          <div className="absolute right-4 bottom-3 flex gap-2" onPointerDown={(e) => e.stopPropagation()}>
-            <Button size="sm" variant="glass" onClick={cancel}>
-              Cancel
-            </Button>
-            <Button size="sm" variant="primary" onClick={save}>
-              Save position
-            </Button>
+          <div
+            className="absolute top-1/2 right-3 flex -translate-y-1/2 flex-col gap-1 rounded-2xl p-1 opacity-0 glass transition-opacity group-hover/cover:opacity-100 focus-within:opacity-100"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <IconButton label="Cancel repositioning" size="sm" onClick={cancel}>
+              <X size={17} />
+            </IconButton>
+            <IconButton label="Save cover position" size="sm" active onClick={save}>
+              <Check size={17} weight="bold" />
+            </IconButton>
           </div>
         </>
       ) : (
-        <div className="absolute right-4 bottom-3 flex gap-2 opacity-0 transition-opacity group-hover/cover:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100">
+        <div className="absolute top-1/2 right-3 flex -translate-y-1/2 flex-col gap-1 rounded-2xl p-1 opacity-0 glass transition-opacity group-hover/cover:opacity-100 focus-within:opacity-100">
           {image && (
-            <Button
+            <IconButton
+              label="Reposition cover"
               size="sm"
-              variant="glass"
               onClick={() => {
                 setMoving(true);
                 requestAnimationFrame(() => coverRef.current?.focus());
               }}
             >
-              Reposition
-            </Button>
+              <ArrowsHorizontal size={17} />
+            </IconButton>
           )}
           <CoverPicker value={page.cover} onChange={(cover) => actions.edit(page.id, { cover, coverY: 50 })}>
-            <Button size="sm" variant="glass">
-              Change cover
-            </Button>
+            <IconButton label="Change cover" size="sm">
+              <ImageSquare size={17} />
+            </IconButton>
           </CoverPicker>
         </div>
       )}
