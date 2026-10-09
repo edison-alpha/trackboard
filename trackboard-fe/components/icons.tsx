@@ -143,6 +143,7 @@ export const Columns = solar("table-columns-split");
 export const ArrowsInLineHorizontal = solar("table-cells-merge");
 export const SquareSplitHorizontal = solar("table-cells-split");
 export const MathOperations = solar("calculator-minimalistic");
+export const Inbox = solar("inbox");
 export const Paperclip = solar("paperclip");
 export const Calendar = solar("calendar");
 export const Mention = solar("mention-circle");

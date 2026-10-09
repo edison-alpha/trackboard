@@ -14,7 +14,9 @@ import { cx } from "@/lib/cx";
 import { createId } from "@/lib/id";
 import { PresenceAvatars, SyncStatus, useCollabDoc, usePresence, type CollabDoc } from "@/modules/collab";
 import { AiComposer, AiDock } from "@/modules/ai";
-import { CommentsPanel, useThreads, type CommentDraft } from "@/modules/comments";
+import { CommentsPanel, threadRequest, useThreads, type CommentDraft } from "@/modules/comments";
+import { recordMention } from "@/modules/inbox";
+import { useStore } from "@/lib/store";
 import { DocEditor, TableOfContents } from "@/modules/editor";
 import { HistoryPanel, useAutoSnapshot } from "@/modules/history";
 import { setUi, togglePanel, Topbar, useUi } from "@/modules/shell";
@@ -29,6 +31,7 @@ import {
   usePage,
   usePageActions,
   usePages,
+  usePeople,
   useWorkspace,
   type PageMeta,
 } from "@/modules/workspace";
@@ -149,7 +152,7 @@ function PageDocument({ page }: { page: PageMeta }) {
 }
 
 function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
-  const { profile } = useWorkspace();
+  const { profile, doc } = useWorkspace();
   const pages = usePages();
   const actions = usePageActions();
   const { panel } = useUi();
@@ -162,8 +165,9 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
   const openCount = threads.filter((t) => !t.resolved).length;
   const pagesRef = useRef(pages);
   pagesRef.current = pages;
-  const usersRef = useRef(users);
-  usersRef.current = users;
+  const people = usePeople();
+  const peopleRef = useRef(people);
+  peopleRef.current = people;
 
   const user = useMemo(() => ({ id: profile.id, name: profile.name, color: profile.color }), [profile]);
   useAutoSnapshot(page.id, collab.doc, { name: profile.name, color: profile.color });
@@ -172,6 +176,15 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
   useEffect(() => {
     editor?.commands.updateUser?.(user);
   }, [editor, user]);
+
+  // Opened from the inbox: show the comments panel on the thread that was clicked.
+  const requested = useStore(threadRequest, null);
+  useEffect(() => {
+    if (!requested || requested.pageId !== page.id) return;
+    setActiveThread(requested.threadId);
+    setUi({ panel: "comments" });
+    threadRequest.set(null);
+  }, [requested, page.id]);
 
   const template = page.template ? (templateById(page.template)?.html ?? null) : null;
 
@@ -199,7 +212,8 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
   const mentions = useMemo(
     () => ({
       pages: () => livePages(pagesRef.current).filter((p) => p.id !== page.id),
-      people: () => usersRef.current.filter((u) => !u.self).map((u) => ({ id: u.id, name: u.name, color: u.color })),
+      // Everyone who has opened this workspace, not only who is on the page right now.
+      people: () => [...peopleRef.current.values()].filter((p) => p.id !== profile.id),
     }),
     [page.id],
   );
@@ -248,6 +262,7 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
               template={template}
               onTemplateApplied={() => actions.update(page.id, { template: null })}
               onLocalChange={(text) => actions.edit(page.id, { text })}
+              onMention={(ids) => ids.forEach((userId) => recordMention(doc, { pageId: page.id, userId, by: profile.id }))}
               onTocUpdate={(data) => setToc(data)}
               onComment={startComment}
               onCommentActivate={(id) => {

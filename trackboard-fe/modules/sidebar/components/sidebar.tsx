@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText, Keyboard, MagnifyingGlass, PencilSimple, Plus, SidebarSimple, Star, Trash, UserSwitch } from "@/components/icons";
+import { FileText, Keyboard, MagnifyingGlass, PencilSimple, Plus, SidebarSimple, Star, Trash, UserSwitch, Inbox as InboxIcon } from "@/components/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { useInbox } from "@/modules/inbox";
 import { Avatar } from "@/components/ui/avatar";
 import { Button, IconButton } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -45,6 +46,7 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
   const roots = childrenOf(pages, null);
   const favorites = favoritesOf(pages);
   const trashCount = trashOf(pages).length;
+  const { unread } = useInbox();
 
   // Reveal the page you navigated to, wherever it sits in the tree.
   useEffect(() => {
@@ -79,6 +81,20 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
           <span className="flex-1 text-left">Search</span>
           <Kbd keys="Mod+K" className="hidden md:inline-flex" />
         </button>
+        <Link
+          href="/inbox"
+          onClick={onNavigate}
+          aria-current={pathname === "/inbox" ? "page" : undefined}
+          aria-label={unread ? `Inbox, ${unread} unread` : "Inbox"}
+          className={cx(
+            "flex h-9 items-center gap-2.5 rounded-(--radius-row) px-2.5 text-[14px] pointer-coarse:h-11",
+            pathname === "/inbox" ? "bg-(--sidebar-active) font-medium text-ink" : "text-ink-2 hover:bg-(--sidebar-hover) hover:text-ink",
+          )}
+        >
+          <InboxIcon size={17} />
+          <span className="flex-1">Inbox</span>
+          {unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-on-accent">{unread > 99 ? "99+" : unread}</span>}
+        </Link>
         <Button variant="primary" size="sm" icon={<Plus size={15} weight="bold" />} onClick={newPage} className="mt-1 justify-start">
           New page
         </Button>

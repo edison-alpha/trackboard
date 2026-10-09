@@ -17,7 +17,7 @@ export const MentionMenu = forwardRef<SuggestionListHandle, SuggestionProps<Ment
       label="Mention a page or person"
       empty="No page or person by that name"
       getKey={(i) => i.id}
-      getGroup={(i) => (i.kind === "person" ? "People on this page" : "Pages")}
+      getGroup={(i) => (i.kind === "person" ? "People" : "Pages")}
       renderItem={(item) => (
         <span className="flex items-center gap-2.5 px-2.5 py-2">
           {item.kind === "person" ? (

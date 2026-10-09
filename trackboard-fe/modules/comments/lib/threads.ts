@@ -37,6 +37,12 @@ export function threadsForPage(doc: Y.Doc, pageId: string): Thread[] {
   return out.sort((a, b) => a.createdAt - b.createdAt);
 }
 
+export function allThreads(doc: Y.Doc): Thread[] {
+  const out: Thread[] = [];
+  threadsOf(doc).forEach((y) => out.push(read(y)));
+  return out;
+}
+
 export function observeThreads(doc: Y.Doc, cb: () => void): () => void {
   const map = threadsOf(doc);
   map.observeDeep(cb);

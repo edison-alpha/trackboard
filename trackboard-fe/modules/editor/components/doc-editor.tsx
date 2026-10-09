@@ -1,6 +1,7 @@
 "use client";
 
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
+import type { Node as PMNode } from "@tiptap/pm/model";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { ySyncPluginKey } from "@tiptap/y-tiptap";
 import { useEffect, useMemo, useRef } from "react";
@@ -26,6 +27,8 @@ type Props = {
   onTemplateApplied: () => void;
   /** Plain text after local edits (debounced), for search and "last edited". */
   onLocalChange: (text: string) => void;
+  /** Profile ids of people newly mentioned by this edit (typed, pasted, or restored). */
+  onMention: (userIds: string[]) => void;
   onTocUpdate: (data: TableOfContentData) => void;
   onComment: (editor: Editor) => void;
   onCommentActivate: (threadId: string) => void;
@@ -33,6 +36,16 @@ type Props = {
 };
 
 const TEXT_DEBOUNCE_MS = 700;
+
+/** Profile ids of every person mentioned in a document ("user:<id>" mention nodes). */
+function mentionedUsers(doc: PMNode): Set<string> {
+  const ids = new Set<string>();
+  doc.descendants((node) => {
+    const id = node.type.name === "mention" ? String(node.attrs.id ?? "") : "";
+    if (id.startsWith("user:")) ids.add(id.slice(5));
+  });
+  return ids;
+}
 
 /** The collaborative page editor: Tiptap bound to the page's Y.Doc, with its menus and handles. */
 export function DocEditor(p: Props) {
@@ -107,6 +120,8 @@ export function DocEditor(p: Props) {
       onUpdate: ({ editor: e, transaction }) => {
         const remote = transaction.getMeta(ySyncPluginKey)?.isChangeOrigin;
         if (remote) return;
+        const added = [...mentionedUsers(e.state.doc)].filter((id) => !mentionedUsers(transaction.before).has(id));
+        if (added.length) latest.current.onMention(added);
         clearTimeout(textTimer.current);
         textTimer.current = setTimeout(() => latest.current.onLocalChange(e.getText({ blockSeparator: "\n" }).slice(0, 20000)), TEXT_DEBOUNCE_MS);
       },
