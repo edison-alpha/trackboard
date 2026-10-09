@@ -211,8 +211,17 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
           style={!docked && pos ? { top: Math.min(pos.top, window.innerHeight - 260), left: pos.left } : undefined}
           data-print-hide
         >
+          <AnimatePresence initial={false} mode="wait">
           {hasResult && (
-            <div className="thin-scroll min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-2" aria-live="polite">
+            <motion.div
+              key="ai-result"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="thin-scroll min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-2"
+              aria-live="polite"
+            >
               <p className="mb-2 flex items-center gap-2 text-xs font-medium text-ink-3">
                 <AiAvatar thinking={busy} size={22} />
                 {title}
@@ -232,11 +241,18 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
                 </p>
               )}
               {state.status === "done" && state.cut && <p className="mt-2 text-xs text-ink-3">Stopped before the end. Insert what's there, or try again.</p>}
-            </div>
+            </motion.div>
           )}
 
           {hasResult && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-2.5">
+            <motion.div
+              key="ai-result-actions"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.16, delay: 0.04, ease: "easeOut" }}
+              className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-2.5"
+            >
               {busy ? (
                 <Button size="sm" variant="glass" icon={<Stop size={16} />} onClick={stop}>
                   Stop
@@ -265,8 +281,9 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
               <Button size="sm" variant="ghost" onClick={close} className="ml-auto">
                 Discard
               </Button>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
 
           {!busy && (
             <div className={cx("flex items-center gap-2 px-4", hasResult ? "border-t border-line py-2" : "py-3")}>
@@ -303,7 +320,15 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
           )}
 
           {state.status === "idle" && (
-            <div className="thin-scroll max-h-72 overflow-y-auto border-t border-line p-1.5" role="listbox" aria-label="AI actions">
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="thin-scroll max-h-72 overflow-y-auto border-t border-line p-1.5"
+              role="listbox"
+              aria-label="AI actions"
+            >
               {actions.length === 0 && <p className="px-3 py-2.5 text-sm text-ink-3">Press Enter to send your instruction.</p>}
               {actions.map((a, i) => {
                 const showGroup = i === 0 || actions[i - 1]?.group !== a.group;
@@ -323,7 +348,7 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
                   </div>
                 );
               })}
-            </div>
+            </motion.div>
           )}
 
           <p className="border-t border-line px-4 py-2 text-[11px] text-ink-3">
@@ -335,4 +360,3 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
     document.body,
   );
 }
-

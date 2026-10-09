@@ -129,19 +129,37 @@ export function AiDock({ editor, pageId, pageTitle }: Props) {
                   <div className="py-2">
                     <p className="text-sm text-ink-2">Ask about this page, or have AI write something for it. Replies can go straight into the page.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {STARTERS.map((s) => (
-                        <button key={s} type="button" onClick={() => submit(s)} className="rounded-full bg-surface-2 px-3 py-1.5 text-[13px] text-ink-2 transition-colors hover:bg-surface-3 hover:text-ink pointer-coarse:py-2.5">
+                      {STARTERS.map((s, i) => (
+                        <motion.button
+                          key={s}
+                          type="button"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.035, duration: 0.16 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => submit(s)}
+                          className="rounded-full bg-surface-2 px-3 py-1.5 text-[13px] text-ink-2 transition-colors hover:bg-surface-3 hover:text-ink pointer-coarse:py-2.5"
+                        >
                           {s}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   </div>
                 ) : (
                   <ol className="grid gap-4">
-                    {messages.map((m) => (
-                      <li key={m.id} className={cx("flex", m.role === "user" && "justify-end")}>
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {messages.map((m) => (
+                      <motion.li
+                        key={m.id}
+                        layout="position"
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.7 }}
+                        className={cx("flex", m.role === "user" && "justify-end")}
+                      >
                         {m.role === "user" ? (
-                          <p className="max-w-[85%] rounded-[18px] rounded-br-md bg-accent px-3.5 py-2 text-[15px] whitespace-pre-wrap text-on-accent">{m.content}</p>
+                          <motion.p layout="position" className="max-w-[85%] rounded-[18px] rounded-br-md bg-accent px-3.5 py-2 text-[15px] whitespace-pre-wrap text-on-accent">{m.content}</motion.p>
                         ) : (
                           <div className="min-w-0 flex-1">
                             {m.content ? (
@@ -178,8 +196,9 @@ export function AiDock({ editor, pageId, pageTitle }: Props) {
                             )}
                           </div>
                         )}
-                      </li>
-                    ))}
+                      </motion.li>
+                      ))}
+                    </AnimatePresence>
                   </ol>
                 )}
               </div>
@@ -237,9 +256,9 @@ export function AiDock({ editor, pageId, pageTitle }: Props) {
               <Stop size={18} />
             </IconButton>
           ) : (
-            <button type="submit" aria-label="Send" disabled={!input.trim()} className="mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-opacity disabled:opacity-35 pointer-coarse:size-11">
+            <motion.button type="submit" aria-label="Send" disabled={!input.trim()} whileTap={{ scale: 0.9 }} whileHover={input.trim() ? { scale: 1.06 } : undefined} className="mb-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent transition-opacity disabled:opacity-35 pointer-coarse:size-11">
               <ArrowUp size={18} />
-            </button>
+            </motion.button>
           )}
           {!expanded && (
             <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100">
