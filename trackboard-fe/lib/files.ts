@@ -6,7 +6,7 @@ export class FileTooLargeError extends Error {
   }
 }
 
-/** Reads an image into a data URL. Images live inside the document until trackboard-be adds file storage. */
+/** Reads an image into a data URL. Images live inside the document until trackdocs-be adds file storage. */
 export function readImage(file: File): Promise<string> {
   if (file.size > MAX_IMAGE_BYTES) return Promise.reject(new FileTooLargeError(file.size));
   return new Promise((resolve, reject) => {
@@ -49,7 +49,7 @@ export function slugify(text: string): string {
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
-/** Reads any file into a data URL for an attachment block (kept in the document until trackboard-be adds storage). */
+/** Reads any file into a data URL for an attachment block (kept in the document until trackdocs-be adds storage). */
 export function readFile(file: File): Promise<string> {
   if (file.size > MAX_FILE_BYTES) return Promise.reject(new Error(`File ${(file.size / 1024 / 1024).toFixed(1)} MB, the limit is ${MAX_FILE_BYTES / 1024 / 1024} MB`));
   return new Promise((resolve, reject) => {

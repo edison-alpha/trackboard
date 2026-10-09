@@ -1,10 +1,10 @@
-# Trackboard design direction
+# Trackdocs design direction
 
 Source: owner direction in chat (Muse screenshots as reference, "glass for buttons etc.", "modern rounded", dark and light mode). This file records that direction; it is not a style invented by the agent.
 
 ## Identity
 
-Trackboard is a workspace for team documentation: nested pages, a rich editor, live co-editing. People spend hours reading and writing here, so the text owns the screen and the chrome stays quiet until it is needed.
+Trackdocs is a workspace for team documentation: nested pages, a rich editor, live co-editing. People spend hours reading and writing here, so the text owns the screen and the chrome stays quiet until it is needed.
 
 - **Personality:** calm, rounded, quick. Never loud.
 - **Design Read:** documentation app for teams, modern rounded with glass accents.

@@ -1,4 +1,4 @@
-/* Trackboard design tokens. Values and reasons live in DESIGN.md; contrast pairs were checked against WCAG AA.
+/* Trackdocs design tokens. Values and reasons live in DESIGN.md; contrast pairs were checked against WCAG AA.
  * :root is light, [data-theme="dark"] is dark (next-themes writes the resolved theme to <html data-theme>). */
 
 :root {
@@ -137,7 +137,7 @@
 
   --shadow-elev: var(--elev);
 
-  /* BoardUI component tokens (date pickers), mapped onto the Trackboard palette. */
+  /* BoardUI component tokens (date pickers), mapped onto the Trackdocs palette. */
   --color-text-primary: var(--ink);
   --color-text-secondary: var(--ink-2);
   --color-text-tertiary: var(--ink-3);

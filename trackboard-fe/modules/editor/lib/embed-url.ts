@@ -15,7 +15,7 @@ export function toEmbed(raw: string): EmbedInfo | null {
 
   if (host === "vimeo.com" && /^\/\d+/.test(path)) return { src: `https://player.vimeo.com/video${path.match(/^\/\d+/)![0]}`, provider: "Vimeo" };
   if (host === "loom.com" && path.startsWith("/share/")) return { src: `https://www.loom.com/embed/${path.slice(7)}`, provider: "Loom" };
-  if (host === "figma.com" && /^\/(file|design|proto|board)\//.test(path)) return { src: `https://www.figma.com/embed?embed_host=trackboard&url=${encodeURIComponent(url.href)}`, provider: "Figma" };
+  if (host === "figma.com" && /^\/(file|design|proto|board)\//.test(path)) return { src: `https://www.figma.com/embed?embed_host=trackdocs&url=${encodeURIComponent(url.href)}`, provider: "Figma" };
   if (host === "docs.google.com") {
     const kind = path.split("/")[1];
     const name = kind === "spreadsheets" ? "Google Sheets" : kind === "presentation" ? "Google Slides" : kind === "forms" ? "Google Forms" : "Google Docs";

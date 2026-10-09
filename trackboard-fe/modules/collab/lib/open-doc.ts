@@ -7,7 +7,7 @@ import { createStore, type Store } from "@/lib/store";
 import { BroadcastProvider } from "./broadcast-provider";
 import { EditorProvider } from "./editor-provider";
 
-/** local: IndexedDB + other tabs. connecting / online / offline: state of the trackboard-be WebSocket. */
+/** local: IndexedDB + other tabs. connecting / online / offline: state of the trackdocs-be WebSocket. */
 export type SyncStatus = "local" | "connecting" | "online" | "offline";
 
 export type CollabDoc = {

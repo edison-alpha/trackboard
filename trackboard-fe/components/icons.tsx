@@ -6,7 +6,7 @@ import { cx } from "@/lib/cx";
 import { FLUENT, SOLAR } from "@/lib/icon-data";
 
 /*
- * Trackboard's icon set: Solar (Iconify). Its soft, rounded strokes match SF Pro Rounded, and every glyph has a
+ * Trackdocs's icon set: Solar (Iconify). Its soft, rounded strokes match SF Pro Rounded, and every glyph has a
  * linear and a bold form, so `weight="fill"` gives the active state (favorite star, selected theme) without a
  * second colour. Icon data is bundled in lib/icon-data.ts (bun scripts/build-icons.ts), so nothing loads at runtime.
  */

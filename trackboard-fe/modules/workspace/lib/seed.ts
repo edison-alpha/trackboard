@@ -7,6 +7,6 @@ export function seedWorkspace(doc: Y.Doc, by: string): void {
   if (meta.get("seeded")) return;
   doc.transact(() => {
     meta.set("seeded", true);
-    createPage(doc, { parentId: null, by, title: "Trackboard guide", icon: "🧭", template: "guide" });
+    createPage(doc, { parentId: null, by, title: "Trackdocs guide", icon: "🧭", template: "guide" });
   });
 }

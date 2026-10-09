@@ -39,7 +39,7 @@ const STEPS = ["welcome", "you", "focus", "look"] as const;
 type Step = (typeof STEPS)[number];
 
 const TITLES: Record<Step, string> = {
-  welcome: "Welcome to Trackboard",
+  welcome: "Welcome to Trackdocs",
   you: "Tell us about you",
   focus: "What will you work on?",
   look: "Make it yours",
@@ -148,7 +148,7 @@ export function OnboardingWizard({ onCancel }: { onCancel?: () => void }) {
                   {step === "welcome" && "A calm place for your team's documentation. Set up takes about a minute."}
                   {step === "you" && "Your name and color show on your cursor when someone opens the same page."}
                   {step === "focus" && `Choose up to ${MAX_FOCUS}. You can change this later.`}
-                  {step === "look" && `Pick how Trackboard looks, ${first}. It follows you everywhere.`}
+                  {step === "look" && `Pick how Trackdocs looks, ${first}. It follows you everywhere.`}
                 </p>
               </div>
 

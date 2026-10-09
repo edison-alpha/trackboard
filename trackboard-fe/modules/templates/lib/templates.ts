@@ -58,7 +58,7 @@ const guide = `
 <li data-type="taskItem" data-checked="false"><p>Press <code>Ctrl/⌘ + /</code> to see every shortcut.</p></li>
 <li data-type="taskItem" data-checked="false"><p>Press <code>Alt + N</code> to create a page.</p></li>
 </ul>
-<div data-type="callout" data-tone="info"><p>For now, every page is stored in this browser. Once trackboard-be is connected, pages sync through the server and teammates can open them on their own devices.</p></div>`;
+<div data-type="callout" data-tone="info"><p>For now, every page is stored in this browser. Once trackdocs-be is connected, pages sync through the server and teammates can open them on their own devices.</p></div>`;
 
 export const TEMPLATES: Template[] = [
   { id: "meeting", name: "Meeting notes", description: "Agenda, decisions, and follow-ups", icon: "🗓️", title: "Meeting notes", html: meeting },
@@ -66,7 +66,7 @@ export const TEMPLATES: Template[] = [
   { id: "sop", name: "Procedure (SOP)", description: "Prerequisites, steps, and recovery", icon: "🧾", title: "Procedure", html: sop },
 ];
 
-const ALL = [...TEMPLATES, { id: "guide", name: "Guide", description: "", icon: "🧭", title: "Trackboard guide", html: guide }];
+const ALL = [...TEMPLATES, { id: "guide", name: "Guide", description: "", icon: "🧭", title: "Trackdocs guide", html: guide }];
 
 export function templateById(id: string | null | undefined): Template | undefined {
   return ALL.find((t) => t.id === id);

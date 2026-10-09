@@ -61,7 +61,7 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-3">
-        <Link href="/" onClick={onNavigate} className="rounded-lg" aria-label="Trackboard home">
+        <Link href="/" onClick={onNavigate} className="rounded-lg" aria-label="Trackdocs home">
           <Logo />
         </Link>
         {onCollapse && (

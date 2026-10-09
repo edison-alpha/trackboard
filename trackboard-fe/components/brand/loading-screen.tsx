@@ -1,31 +1,13 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import { cx } from "@/lib/cx";
-import { LOGO_COLUMN, LOGO_COLUMNS } from "./logo";
+import { LogoMark } from "./logo";
 
-/** The logo columns rise one after another, then settle and rise again while work is still running. */
+/** Reuses the document mark so the loading screen and sidebar share the same identity. */
 export function LoaderMark({ size = 72 }: { size?: number }) {
-  const reduce = useReducedMotion();
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="9" fill="var(--accent)" />
-      {LOGO_COLUMNS.map((c, i) => (
-        <motion.rect
-          key={c.x}
-          x={c.x}
-          y={LOGO_COLUMN.y}
-          width={LOGO_COLUMN.width}
-          height={c.height}
-          rx={LOGO_COLUMN.radius}
-          fill="#fff"
-          style={{ originY: 0, transformBox: "fill-box" }}
-          initial={reduce ? false : { scaleY: 0.15, opacity: 0.4 }}
-          animate={reduce ? undefined : { scaleY: [0.15, 1, 1, 0.15], opacity: [0.4, 1, 1, 0.4] }}
-          transition={{ duration: 1.6, times: [0, 0.35, 0.75, 1], ease: "easeInOut", repeat: Infinity, delay: i * 0.14 }}
-        />
-      ))}
-    </svg>
+    <LogoMark size={size} />
   );
 }
 
@@ -41,7 +23,7 @@ export function LoadingScreen({ status = "Opening your workspace", className }: 
     >
       <LoaderMark />
       <div className="text-center">
-        <p className="text-xl font-bold tracking-[-0.01em] text-ink">trackboard</p>
+        <p className="text-xl font-bold tracking-[-0.01em] text-ink">trackdocs</p>
         <p className="mt-1 text-sm text-ink-3">{status}…</p>
       </div>
     </motion.div>

@@ -57,7 +57,7 @@ export type BuildOptions = {
   onAiRequest?: () => void;
 };
 
-/** Every extension the Trackboard editor uses, configured in one place. */
+/** Every extension the Trackdocs editor uses, configured in one place. */
 export function buildExtensions(o: BuildOptions): AnyExtension[] {
   const doc = o.collab?.doc ?? o.previewDoc;
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { cx } from "@/lib/cx";
 
-const STORAGE_KEY = "trackboard-noise";
+const STORAGE_KEY = "trackdocs-noise";
 
 function applyNoise(enabled: boolean) {
   document.documentElement.dataset.noise = enabled ? "on" : "off";

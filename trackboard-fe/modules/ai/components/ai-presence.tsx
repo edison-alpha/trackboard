@@ -7,7 +7,7 @@ import { ThinkingOrb, type OrbState } from "thinking-orbs";
 import { cx } from "@/lib/cx";
 import type { AiActionId } from "../lib/actions";
 
-/* The AI's face and its "thinking" indicator, both in the Trackboard accent (DESIGN.md palette). */
+/* The AI's face and its "thinking" indicator, both in the Trackdocs accent (DESIGN.md palette). */
 
 const BRAND = "#0b6fe8";
 const BRAND_ON_DARK = "#4da3ff";

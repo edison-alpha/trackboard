@@ -31,6 +31,7 @@ export function readPage(y: PageYMap): PageMeta {
     text: (y.get("text") as string) ?? "",
     template: (y.get("template") as string | null) ?? null,
     editors: (y.get("editors") as Y.Map<number> | undefined)?.toJSON() ?? {},
+    linkedTickets: (y.get("linkedTickets") as PageMeta["linkedTickets"] | undefined) ?? [],
   };
 }
 
@@ -130,6 +131,7 @@ export function createPage(
     text: "",
     template: input.template ?? null,
     editors: {},
+    linkedTickets: [],
   };
   doc.transact(() => {
     for (const [k, v] of Object.entries(meta)) if (k !== "editors") y.set(k, v);

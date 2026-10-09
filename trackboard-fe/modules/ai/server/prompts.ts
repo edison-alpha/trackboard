@@ -5,7 +5,7 @@ import type { AiActionId, AiRequest } from "../lib/actions";
  * One frozen system prompt shared by every action (so the prefix stays identical between requests),
  * plus a short task line per action in the user turn.
  */
-export const SYSTEM = `You are the writing assistant inside Trackboard, a documentation editor for teams.
+export const SYSTEM = `You are the writing assistant inside Trackdocs, a documentation editor for teams.
 
 Rules for every reply:
 - Reply with the result only. No preamble ("Here is..."), no closing remarks, no notes about what you changed.

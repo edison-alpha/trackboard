@@ -14,7 +14,7 @@ export type Profile = {
 export const PROFILE_COLORS = ["#0b6fe8", "#b02a2a", "#1d7a45", "#7b3fc4", "#b4530a", "#0f766e", "#be185d", "#4f46e5"] as const;
 
 /*
- * Local identities until trackboard-be adds accounts.
+ * Local identities until trackdocs-be adds accounts.
  * The list of people is shared by every tab (localStorage); who is signed in is per tab (sessionStorage),
  * so two tabs of one browser can be two different collaborators.
  */
@@ -62,7 +62,7 @@ function writeProfiles(list: Profile[]): void {
   safeStorage.set(PROFILES_KEY, JSON.stringify(list));
 }
 
-/** Everyone who has used Trackboard in this browser. */
+/** Everyone who has used Trackdocs in this browser. */
 export const profilesStore = createStore<Profile[]>([]);
 /** Who this tab is signed in as. undefined = not read yet, null = choose or create one. */
 export const profileStore = createStore<Profile | null | undefined>(undefined);

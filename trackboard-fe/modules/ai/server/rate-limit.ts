@@ -1,6 +1,6 @@
 import "server-only";
 
-/* In-memory sliding window per caller. Enough for one server process; trackboard-be replaces it with a shared store. */
+/* In-memory sliding window per caller. Enough for one server process; trackdocs-be replaces it with a shared store. */
 
 const WINDOW_MS = 60_000;
 const LIMIT = Number(process.env.AI_RATE_PER_MINUTE ?? 20);

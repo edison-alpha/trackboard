@@ -1,3 +1,5 @@
+import type { TicketLink } from "@/modules/integrations/tickets/service";
+
 export type PageMeta = {
   id: string;
   parentId: string | null;
@@ -25,6 +27,7 @@ export type PageMeta = {
   template: string | null;
   /** Everyone who edited the page (profile id -> last edit time), for the contributors row. */
   editors: Record<string, number>;
+  linkedTickets: TicketLink[];
 };
 
 export type Person = { id: string; name: string; color: string };

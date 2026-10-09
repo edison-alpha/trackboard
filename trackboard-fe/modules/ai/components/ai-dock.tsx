@@ -108,7 +108,7 @@ export function AiDock({ editor, pageId, pageTitle }: Props) {
             <motion.div key="chat" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22, ease: "easeOut" }}>
               <header className="group flex items-center gap-2 border-b border-line px-4 py-2.5">
                 <AiAvatar thinking={busy} size={26} />
-                <p className="flex-1 text-sm font-semibold">Trackboard AI</p>
+                <p className="flex-1 text-sm font-semibold">Trackdocs AI</p>
                 <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100">
                   {messages.length > 0 && (
                     <IconButton label="New conversation" size="sm" onClick={clear}>

@@ -1,5 +1,5 @@
 /*
- * Bundles every icon Trackboard uses into lib/icon-data.ts, read from the full icon sets installed locally
+ * Bundles every icon Trackdocs uses into lib/icon-data.ts, read from the full icon sets installed locally
  * (@iconify-json/solar, @iconify-json/fluent), so any icon in those libraries can be used by name and
  * still renders offline. Only the icons actually referenced end up in the app bundle.
  *

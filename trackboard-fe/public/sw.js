@@ -1,4 +1,4 @@
-const CACHE_NAME = "trackboard-shell-v2";
+const CACHE_NAME = "trackdocs-shell-v2";
 const APP_SHELL = ["/", "/favicon.png", "/apple-touch-icon.png", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {

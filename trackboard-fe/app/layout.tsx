@@ -18,7 +18,7 @@ const rounded = localFont({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Trackboard", template: "%s · Trackboard" },
+  title: { default: "Trackdocs", template: "%s · Trackdocs" },
   description: "Team documentation you write together, live.",
   icons: {
     icon: [

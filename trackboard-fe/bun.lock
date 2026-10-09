@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@trackboard/frontend",
+      "name": "@trackdocs/frontend",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.133.0",
         "@floating-ui/dom": "^1.7.4",

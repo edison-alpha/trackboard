@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatCircleText, FileText, Star } from "@/components/icons";
+import { ChatCircleText, FileText, LinkSimple, Star } from "@/components/icons";
 import type { TableOfContentDataItem } from "@tiptap/extension-table-of-contents";
 import type { Editor } from "@tiptap/react";
 import Link from "next/link";
@@ -19,6 +19,7 @@ import { recordMention } from "@/modules/inbox";
 import { useStore } from "@/lib/store";
 import { DocEditor, TableOfContents } from "@/modules/editor";
 import { HistoryPanel, useAutoSnapshot } from "@/modules/history";
+import { TicketActions } from "@/modules/integrations/tickets";
 import { setUi, togglePanel, Topbar, useUi } from "@/modules/shell";
 import { templateById } from "@/modules/templates";
 import {
@@ -160,6 +161,7 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
   const [toc, setToc] = useState<TableOfContentDataItem[]>([]);
   const [draft, setDraft] = useState<CommentDraft | null>(null);
   const [activeThread, setActiveThread] = useState<string | null>(null);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const users = usePresence(collab.awareness);
   const threads = useThreads(page.id);
   const openCount = threads.filter((t) => !t.resolved).length;
@@ -239,6 +241,9 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
                 <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-on-accent">{openCount}</span>
               )}
             </IconButton>
+            <Button variant="ghost" size="sm" icon={<LinkSimple size={17} />} onClick={() => setTicketDialogOpen(true)} className="hidden sm:inline-flex">
+              Task
+            </Button>
             <IconButton label={page.favorite ? "Remove from favorites (Alt+S)" : "Add to favorites (Alt+S)"} active={page.favorite} onClick={() => actions.toggleFavorite(page.id)}>
               <Star size={19} weight={page.favorite ? "fill" : "regular"} />
             </IconButton>
@@ -300,6 +305,17 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
       />
       {editor && <AiComposer editor={editor} pageTitle={page.title} onTitle={(title) => title && actions.edit(page.id, { title })} />}
       <HistoryPanel open={panel === "history"} onClose={() => setUi({ panel: null })} pageId={page.id} doc={collab.doc} editor={editor} author={{ name: profile.name, color: profile.color }} />
+      <TicketActions
+        open={ticketDialogOpen}
+        onOpenChange={setTicketDialogOpen}
+        pageId={page.id}
+        pageTitle={displayTitle(page)}
+        pageText={page.text}
+        linkedTickets={page.linkedTickets}
+        onLinked={(ticket) => {
+          if (!page.linkedTickets.some((linked) => linked.id === ticket.id)) actions.update(page.id, { linkedTickets: [...page.linkedTickets, ticket] });
+        }}
+      />
     </div>
   );
 }
