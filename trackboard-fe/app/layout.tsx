@@ -20,7 +20,13 @@ const rounded = localFont({
 export const metadata: Metadata = {
   title: { default: "Trackboard", template: "%s · Trackboard" },
   description: "Team documentation you write together, live.",
-  icons: { icon: "/icon.svg" },
+  icons: {
+    icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+  },
 };
 
 export const viewport: Viewport = {
