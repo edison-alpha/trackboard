@@ -9,6 +9,8 @@ import {
   DownloadSimple,
   Paragraph,
   Printer,
+  TextAlignCenter,
+  TextAlignLeft,
   Trash,
   UploadSimple,
 } from "@/components/icons";
@@ -74,9 +76,21 @@ export function PageMenu({ page, editor }: { page: PageMeta; editor: Editor | nu
           </MenuSubContent>
         </MenuSub>
         <MenuSeparator />
-        <MenuCheckItem checked={page.fullWidth} onCheckedChange={(v) => actions.update(page.id, { fullWidth: v })} icon={<ArrowsHorizontal size={16} />}>
-          Full width
-        </MenuCheckItem>
+        <MenuSub>
+          <MenuSubTrigger icon={<ArrowsHorizontal size={16} />}>Page width</MenuSubTrigger>
+          <MenuSubContent className="w-52">
+            <MenuLabel>Choose a reading layout</MenuLabel>
+            <MenuCheckItem checked={page.pageWidth === "normal"} onCheckedChange={() => actions.update(page.id, { pageWidth: "normal", fullWidth: false })} icon={<TextAlignLeft size={16} />}>
+              Normal
+            </MenuCheckItem>
+            <MenuCheckItem checked={page.pageWidth === "center"} onCheckedChange={() => actions.update(page.id, { pageWidth: "center", fullWidth: false })} icon={<TextAlignCenter size={16} />}>
+              Center
+            </MenuCheckItem>
+            <MenuCheckItem checked={page.pageWidth === "full"} onCheckedChange={() => actions.update(page.id, { pageWidth: "full", fullWidth: true })} icon={<ArrowsHorizontal size={16} />}>
+              Full
+            </MenuCheckItem>
+          </MenuSubContent>
+        </MenuSub>
         <MenuCheckItem
           checked={invisibles}
           onCheckedChange={(v) => {

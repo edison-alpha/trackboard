@@ -10,6 +10,9 @@ type PageYMap = Y.Map<unknown>;
 export const pagesOf = (doc: Y.Doc) => doc.getMap<PageYMap>("pages");
 
 export function readPage(y: PageYMap): PageMeta {
+  const storedWidth = y.get("pageWidth");
+  const pageWidth: PageMeta["pageWidth"] =
+    storedWidth === "normal" || storedWidth === "center" || storedWidth === "full" ? storedWidth : Boolean(y.get("fullWidth")) ? "full" : "normal";
   return {
     id: y.get("id") as string,
     parentId: (y.get("parentId") as string | null) ?? null,
@@ -20,6 +23,7 @@ export function readPage(y: PageYMap): PageMeta {
     position: (y.get("position") as number) ?? 0,
     favorite: Boolean(y.get("favorite")),
     fullWidth: Boolean(y.get("fullWidth")),
+    pageWidth,
     createdAt: (y.get("createdAt") as number) ?? 0,
     createdBy: (y.get("createdBy") as string) ?? "",
     updatedAt: (y.get("updatedAt") as number) ?? 0,
@@ -118,6 +122,7 @@ export function createPage(
     position: positionAt(siblings, input.index ?? siblings.length),
     favorite: false,
     fullWidth: false,
+    pageWidth: "center",
     createdAt: now,
     createdBy: input.by,
     updatedAt: now,

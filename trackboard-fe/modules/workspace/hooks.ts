@@ -45,7 +45,7 @@ export function usePageActions() {
         icon: source.icon,
         index: siblings.findIndex((p) => p.id === id) + 1,
       });
-      ops.updatePage(doc, copyId, { cover: source.cover, coverY: source.coverY, fullWidth: source.fullWidth, text: source.text }, profile.id);
+      ops.updatePage(doc, copyId, { cover: source.cover, coverY: source.coverY, fullWidth: source.fullWidth, pageWidth: source.pageWidth, text: source.text }, profile.id);
       try {
         await writeStoredDoc(pageDocName(copyId), await readStoredDoc(pageDocName(id)));
         router.push(pageHref(copyId));

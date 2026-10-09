@@ -56,6 +56,8 @@ export type EditorContext = {
   createSubpage: () => { id: string; title: string };
   /** Asks for a value (link, formula). Resolves null when cancelled. */
   prompt: (title: string, placeholder: string) => Promise<string | null>;
+  /** Opens a row/column picker before inserting a table. */
+  pickTable: (editor: Editor, range: Range) => void;
 };
 
 export type SlashGroup = "AI" | "Basic" | "Lists" | "Media" | "Embeds" | "Layout" | "Advanced" | "Inline" | "Color" | "Actions";
@@ -180,7 +182,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   { id: "cols-4", title: "4 columns", hint: "Four blocks side by side", group: "Layout", icon: ColumnsLayout, keywords: ["columns", "layout", "grid", "4"], run: (e, r) => chain(e, r).insertColumns(4).run() },
   { id: "toc", title: "Table of contents", hint: "Live list of this page's headings", group: "Layout", icon: Contents, keywords: ["toc", "contents", "outline", "index", "headings"], run: (e, r) => chain(e, r).insertTableOfContents().run() },
 
-  { id: "table", title: "Table", hint: "3 × 3 with a header row", group: "Advanced", icon: Table, keywords: ["table", "grid", "columns", "rows"], run: (e, r) => chain(e, r).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+  { id: "table", title: "Table", hint: "Choose rows and columns", group: "Advanced", icon: Table, keywords: ["table", "grid", "columns", "rows"], run: (e, r, ctx) => ctx.pickTable(e, r) },
   {
     id: "math-block",
     title: "Equation",

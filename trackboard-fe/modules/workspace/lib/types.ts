@@ -12,6 +12,8 @@ export type PageMeta = {
   position: number;
   favorite: boolean;
   fullWidth: boolean;
+  /** Reading layout: normal keeps the table of contents, center centers the article, full uses the available width. */
+  pageWidth: "normal" | "center" | "full";
   createdAt: number;
   createdBy: string;
   updatedAt: number;

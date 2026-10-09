@@ -5,6 +5,7 @@ import type { Node as PMNode } from "@tiptap/pm/model";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import { ySyncPluginKey } from "@tiptap/y-tiptap";
 import { useEffect, useMemo, useRef } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { readFile, readImage } from "@/lib/files";
 import { openAi } from "@/modules/ai/lib/ai-store";
@@ -20,7 +21,7 @@ import { TableMenu } from "./table-menu";
 type Props = {
   collab: CollabDoc;
   user: CollabUser;
-  context: Omit<EditorContext, "pickImage" | "pickFile">;
+  context: Omit<EditorContext, "pickImage" | "pickFile" | "pickTable">;
   mentions: MentionSources;
   /** HTML to fill the page with the first time it opens empty. */
   template: string | null;
@@ -54,6 +55,7 @@ export function DocEditor(p: Props) {
   const linkRequests = useMemo(() => createStore(0), []);
   const editorRef = useRef<Editor | null>(null);
   const textTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [tablePicker, setTablePicker] = useState<{ editor: Editor; top: number; left: number } | null>(null);
 
   const insertImages = (editor: Editor, files: File[], pos?: number) => {
     for (const file of files) {
@@ -91,6 +93,13 @@ export function DocEditor(p: Props) {
             const input = Object.assign(document.createElement("input"), { type: "file", accept: "image/*", multiple: true });
             input.onchange = () => insertImages(e, [...(input.files ?? [])]);
             input.click();
+          },
+          pickTable: (e, range) => {
+            const coords = e.view.coordsAtPos(range.from);
+            if (!e.chain().focus().deleteRange(range).run()) return;
+            requestAnimationFrame(() => {
+              setTablePicker({ editor: e, top: coords.bottom + 8, left: coords.left });
+            });
           },
         },
         mentions: p.mentions,
@@ -153,6 +162,56 @@ export function DocEditor(p: Props) {
       <BubbleMenu editor={editor} linkRequests={linkRequests} onComment={() => p.onComment(editor)} />
       <TableMenu editor={editor} />
       <BlockHandle editor={editor} />
+      {tablePicker && <TablePicker {...tablePicker} onClose={() => setTablePicker(null)} />}
     </>
+  );
+}
+
+const TABLE_PICKER_SIZE = 8;
+
+function TablePicker({ editor, top, left, onClose }: { editor: Editor; top: number; left: number; onClose: () => void }) {
+  const [hovered, setHovered] = useState({ rows: 3, cols: 3 });
+
+  const insert = (rows: number, cols: number) => {
+    editor
+      .chain()
+      .focus()
+      .insertTable({ rows, cols, withHeaderRow: true })
+      .run();
+    onClose();
+  };
+
+  return (
+    <div
+      className="floating fixed z-[60] w-[184px] rounded-2xl p-3 text-ink"
+      style={{ top, left }}
+      role="dialog"
+      aria-label="Choose table size"
+      onMouseDown={(event) => event.preventDefault()}
+      onMouseLeave={() => setHovered({ rows: 3, cols: 3 })}
+    >
+      <div className="grid grid-cols-8 gap-1" role="grid" aria-label="Table size">
+        {Array.from({ length: TABLE_PICKER_SIZE * TABLE_PICKER_SIZE }, (_, index) => {
+          const row = Math.floor(index / TABLE_PICKER_SIZE) + 1;
+          const col = (index % TABLE_PICKER_SIZE) + 1;
+          const active = row <= hovered.rows && col <= hovered.cols;
+          return (
+            <button
+              key={`${row}-${col}`}
+              type="button"
+              className={`aspect-square rounded-[4px] border transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${
+                active ? "border-accent bg-accent-soft" : "border-line-strong bg-bg"
+              }`}
+              aria-label={`${col} columns by ${row} rows`}
+              onMouseEnter={() => setHovered({ rows: row, cols: col })}
+              onClick={() => insert(row, col)}
+            />
+          );
+        })}
+      </div>
+      <div className="mt-3 text-center text-xs font-medium text-ink-2">
+        {hovered.cols} x {hovered.rows}
+      </div>
+    </div>
   );
 }

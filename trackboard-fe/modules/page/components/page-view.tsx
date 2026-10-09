@@ -251,8 +251,15 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
 
       <main className="flex flex-1 flex-col">
         <PageCover page={page} />
-        <div className={cx("mx-auto flex w-full gap-10 px-5 sm:px-12", page.fullWidth ? "max-w-none" : "max-w-[760px] xl:max-w-[1040px]")}>
-          <article className={cx("min-w-0 flex-1", !page.fullWidth && "xl:max-w-[760px]")}>
+        <div
+          className={cx(
+            "mx-auto flex w-full gap-10 px-5 sm:px-12",
+            page.pageWidth === "full" && "max-w-none",
+            page.pageWidth === "center" && "max-w-[760px]",
+            page.pageWidth === "normal" && "max-w-[760px] xl:max-w-[1040px]",
+          )}
+        >
+          <article className={cx("min-w-0 flex-1", page.pageWidth === "normal" && "xl:max-w-[760px]")}>
             <PageTitleBlock page={page} onEnter={() => editor?.commands.focus("start")} />
             <DocEditor
               collab={collab}
@@ -272,7 +279,7 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
               onReady={setEditor}
             />
           </article>
-          {!page.fullWidth && toc.length > 1 && (
+          {page.pageWidth === "normal" && toc.length > 1 && (
             <aside className="sticky top-20 mt-28 hidden h-fit max-h-[calc(100dvh-120px)] w-56 shrink-0 overflow-y-auto xl:block" data-print-hide>
               <TableOfContents items={toc} editor={editor} />
             </aside>
@@ -296,4 +303,3 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
     </div>
   );
 }
-
