@@ -106,20 +106,22 @@ export function AiDock({ editor, pageId, pageTitle }: Props) {
         <AnimatePresence initial={false}>
           {expanded && (
             <motion.div key="chat" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22, ease: "easeOut" }}>
-              <header className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+              <header className="group flex items-center gap-2 border-b border-line px-4 py-2.5">
                 <AiAvatar thinking={busy} size={26} />
                 <p className="flex-1 text-sm font-semibold">Trackboard AI</p>
-                {messages.length > 0 && (
-                  <IconButton label="New conversation" size="sm" onClick={clear}>
-                    <Restart size={16} />
+                <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100">
+                  {messages.length > 0 && (
+                    <IconButton label="New conversation" size="sm" onClick={clear}>
+                      <Restart size={16} />
+                    </IconButton>
+                  )}
+                  <IconButton label="Minimize" size="sm" onClick={() => setDock("minimized")}>
+                    <CaretDown size={14} />
                   </IconButton>
-                )}
-                <IconButton label="Minimize" size="sm" onClick={() => setDock("minimized")}>
-                  <CaretDown size={14} />
-                </IconButton>
-                <IconButton label="Hide AI (Alt+A to bring it back)" size="sm" onClick={() => setDock("hidden")}>
-                  <X size={16} />
-                </IconButton>
+                  <IconButton label="Hide AI (Alt+A to bring it back)" size="sm" onClick={() => setDock("hidden")}>
+                    <X size={16} />
+                  </IconButton>
+                </div>
               </header>
 
               <div ref={listRef} className="thin-scroll max-h-[min(48dvh,440px)] overflow-y-auto px-4 py-3" aria-live="polite">
@@ -207,7 +209,7 @@ export function AiDock({ editor, pageId, pageTitle }: Props) {
           </div>
         )}
 
-        <form onSubmit={(e) => submit(input, e)} className="flex items-end gap-2 px-3 py-2.5">
+        <form onSubmit={(e) => submit(input, e)} className="group flex items-end gap-2 px-3 py-2.5">
           {!expanded && <AiAvatar thinking={busy} size={26} className="mb-1" />}
           <textarea
             ref={inputRef}
@@ -240,14 +242,14 @@ export function AiDock({ editor, pageId, pageTitle }: Props) {
             </button>
           )}
           {!expanded && (
-            <>
+            <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 pointer-coarse:opacity-100">
               <IconButton label="Open conversation" onClick={() => setDock("expanded")} className="mb-0.5">
                 <CaretUp size={14} />
               </IconButton>
               <IconButton label="Hide AI (Alt+A to bring it back)" onClick={() => setDock("hidden")} className="mb-0.5">
                 <X size={16} />
               </IconButton>
-            </>
+            </div>
           )}
         </form>
         {expanded && <p className="px-4 pb-2.5 text-[11px] text-ink-3">Sends your messages{usePage ? ", this page" : ""}{selection ? " and the selection" : ""} to the AI service.</p>}
