@@ -1,8 +1,9 @@
 "use client";
 
-import { FileText, Keyboard, MagnifyingGlass, PencilSimple, Plus, SidebarSimple, Star, Trash, UserSwitch, Inbox as InboxIcon } from "@/components/icons";
+import { FileText, Keyboard, MagnifyingGlass, PencilSimple, Plus, SidebarSimple, Star, Trash, UserCircle, UserSwitch, Inbox as InboxIcon } from "@/components/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { useInbox } from "@/modules/inbox";
@@ -41,6 +42,7 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
   const { profile } = useWorkspace();
   const actions = usePageActions();
   const pathname = usePathname();
+  const router = useRouter();
   const d = useStore(drag);
   const activeId = pathname.startsWith("/p/") ? pathname.slice(3) : null;
   const roots = childrenOf(pages, null);
@@ -176,6 +178,9 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
               <span className="truncate text-[14px] font-medium text-ink">{profile.name}</span>
             </MenuTrigger>
             <MenuContent side="top" align="start" className="w-60">
+              <MenuItem icon={<UserCircle size={16} />} onSelect={() => router.push("/profile")}>
+                View profile
+              </MenuItem>
               <MenuItem icon={<PencilSimple size={16} />} onSelect={() => setUi({ profile: true, drawer: false })}>
                 Change name and color
               </MenuItem>

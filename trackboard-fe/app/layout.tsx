@@ -4,6 +4,10 @@ import "katex/dist/katex.min.css";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 import { PwaRegister } from "@/components/providers/pwa-register";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 /** SF Pro Rounded from the owner's brand files: the "modern rounded" voice (DESIGN.md). */
 const rounded = localFont({
@@ -39,7 +43,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={rounded.variable} suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
       <body>
         <AppProviders>{children}</AppProviders>
         <PwaRegister />
