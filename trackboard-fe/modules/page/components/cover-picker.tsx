@@ -50,7 +50,7 @@ export function CoverPicker({ value, onChange, children }: { value: string | nul
               title={c.label}
               onClick={() => (onChange(c.id), setOpen(false))}
               className={cx(
-                "aspect-square rounded-lg border border-white/20 shadow-sm transition-transform hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+                "aspect-square rounded-lg border border-line-strong shadow-sm transition-transform hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
                 value === c.id && "ring-2 ring-accent ring-offset-2 ring-offset-surface",
               )}
               style={{ background: c.css }}

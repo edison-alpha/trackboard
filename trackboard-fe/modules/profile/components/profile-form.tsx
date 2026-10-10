@@ -63,7 +63,7 @@ export function ProfileForm({ initial, submitLabel, onDone }: { initial?: Profil
               className={cx("flex size-9 items-center justify-center rounded-full transition-transform active:scale-90 pointer-coarse:size-11", c === color && "ring-2 ring-ink ring-offset-2 ring-offset-surface")}
               style={{ background: c }}
             >
-              {c === color && <Check size={16} weight="bold" color="#fff" />}
+              {c === color && <Check size={16} weight="bold" color="var(--on-accent)" />}
             </button>
           ))}
         </div>

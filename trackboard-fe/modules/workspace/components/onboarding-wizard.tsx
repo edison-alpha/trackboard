@@ -213,7 +213,7 @@ export function OnboardingWizard({ onCancel }: { onCancel?: () => void }) {
                           className={cx("flex size-9 items-center justify-center rounded-full transition-transform active:scale-90 pointer-coarse:size-11", c === color && "ring-2 ring-ink ring-offset-2 ring-offset-bg")}
                           style={{ background: c }}
                         >
-                          {c === color && <Check size={16} weight="bold" color="#fff" />}
+                          {c === color && <Check size={16} weight="bold" color="var(--on-accent)" />}
                         </button>
                       ))}
                     </div>
@@ -247,7 +247,7 @@ export function OnboardingWizard({ onCancel }: { onCancel?: () => void }) {
                         </span>
                         {on && (
                           <span className="absolute top-3 right-3 flex size-5 items-center justify-center rounded-full bg-accent">
-                            <Check size={12} weight="bold" color="#fff" />
+                            <Check size={12} weight="bold" color="var(--on-accent)" />
                           </span>
                         )}
                       </button>

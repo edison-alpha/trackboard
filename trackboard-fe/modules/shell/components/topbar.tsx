@@ -46,7 +46,7 @@ export function Topbar({ children, actions, overCover }: { children?: ReactNode;
         </IconButton>
       )}
       <div className="flex min-w-0 flex-1 items-center">{children && <div className={cx("flex min-w-0 items-center", pill || "flex-1")}>{children}</div>}</div>
-      {actions && <div className={cx("flex shrink-0 items-center gap-1", pill)}>{actions}</div>}
+      {actions && <div className={cx("flex shrink-0 items-center gap-1 text-ink-2", pill)}>{actions}</div>}
     </header>
   );
 }

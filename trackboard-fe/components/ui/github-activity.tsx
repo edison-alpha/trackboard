@@ -441,7 +441,7 @@ const Avatar = ({
     layoutId={layoutId}
     transition={transition}
     className={cn(
-      "grid size-7 shrink-0 place-items-center overflow-hidden rounded-full bg-neutral-200 text-[11px] font-medium uppercase text-foreground/70 ring-2 ring-background dark:bg-neutral-800",
+      "grid size-7 shrink-0 place-items-center overflow-hidden rounded-full bg-surface-2 text-[11px] font-medium uppercase text-ink-2 ring-2 ring-bg",
       "[&_img]:size-full [&_img]:object-cover [&_svg]:size-full",
       className,
     )}
@@ -498,7 +498,7 @@ const Chevron = ({
     strokeLinecap="round"
     strokeLinejoin="round"
     aria-hidden
-    className="size-7 text-[#C4C9CC] dark:text-[#3E4346]"
+    className="size-7 text-ink-3"
     initial={false}
     animate={{ rotate: open ? 180 : 0 }}
     transition={transition}

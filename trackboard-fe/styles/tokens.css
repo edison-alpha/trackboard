@@ -1,7 +1,11 @@
 /* Trackdocs design tokens. Values and reasons live in DESIGN.md; contrast pairs were checked against WCAG AA.
  * :root is light, [data-theme="dark"] is dark (next-themes writes the resolved theme to <html data-theme>). */
 
-:root {
+/* The attribute selector is required, not decorative: globals.css's shadcn :root block
+ * declares --accent too (a leftover, unrelated grey), and a plain :root here would lose
+ * that tie to source order. The extra specificity is what keeps the brand blue winning. */
+:root,
+:root[data-theme="light"] {
   color-scheme: light;
   --bg: #ffffff;
   --sidebar: #f4f4f3;

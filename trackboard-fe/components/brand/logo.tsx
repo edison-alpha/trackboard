@@ -4,7 +4,7 @@ export function LogoMark({ size = 28, className }: { size?: number; className?: 
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" className={cx("shrink-0", className)} aria-hidden="true">
       <rect width="32" height="32" rx="9" fill="var(--accent)" />
-      <path d="M9 6.5h9l5 5v14H9z" fill="#fff" />
+      <path d="M9 6.5h9l5 5v14H9z" fill="var(--on-accent)" />
       <path d="M18 6.5v5h5" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M12.5 16h7M12.5 19.5h7M12.5 23h5" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
