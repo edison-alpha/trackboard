@@ -159,9 +159,9 @@ export function DatePicker({
             value={pendingValue}
             onChange={setPendingValue}
           >
-            <div className="flex flex-col pt-2 pr-2 pb-3 pl-2">
+            <div className="flex flex-col pt-2 pr-2 pb-2 pl-2">
               <MonthPanel offset={0} showPrev showNext />
-              <div className="flex items-center justify-between pt-3 pr-4 pl-4">
+              <div className="flex items-center justify-between pt-2 pr-3 pl-3">
                 <div>
                   <AnimatePresence>
                     {pendingValue && (
@@ -184,9 +184,10 @@ export function DatePicker({
                     )}
                   </AnimatePresence>
                 </div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-1.5">
                   <Button
                     variant="secondary"
+                    size="small"
                     onClick={() => {
                       setPendingValue(committedValue);
                       setIsOpen(false);
@@ -195,6 +196,7 @@ export function DatePicker({
                     Cancel
                   </Button>
                   <Button
+                    size="small"
                     onClick={() => commit(pendingValue)}
                     disabled={!pendingValue}
                   >

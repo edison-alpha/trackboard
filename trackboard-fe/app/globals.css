@@ -190,8 +190,8 @@
 
 /* BoardUI typography token used by the imported date pickers. */
 @utility text-body-medium {
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 500;
 }
 

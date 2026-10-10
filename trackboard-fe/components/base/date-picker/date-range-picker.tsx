@@ -151,14 +151,14 @@ function QuickSelect({
   const presets = useQuickSelectPresets();
 
   return (
-    <div className="flex w-[118px] shrink-0 flex-col gap-1.5">
+    <div className="flex w-[100px] shrink-0 flex-col gap-1">
       {presets.map((preset) => (
         <button
           key={preset.label}
           type="button"
           onClick={() => onSelect(preset.range)}
           className={cx(
-            "w-full cursor-pointer rounded-2lg px-2 py-1.5 text-left text-body-medium text-text-primary transition-colors duration-150 ease",
+            "w-full cursor-pointer rounded-2lg px-2 py-1 text-left text-body-medium text-text-primary transition-colors duration-150 ease",
             isPresetActive(value, preset.range)
               ? "bg-background-tertiary-default"
               : "hover:bg-background-secondary-hover",
@@ -183,8 +183,8 @@ function Footer({
   onApply: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between pt-3 pr-4">
-      <div className="flex items-center gap-2.5">
+    <div className="flex items-center justify-between pt-2 pr-3">
+      <div className="flex items-center gap-2">
         <AnimatePresence>
           {value && (
             <motion.div
@@ -193,9 +193,9 @@ function Footer({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25, ease: [0.34, 1.2, 0.64, 1] }}
-              className="flex items-center gap-2.5"
+              className="flex items-center gap-2"
             >
-              <div className="flex items-center gap-[5px]">
+              <div className="flex items-center gap-1">
                 <DateChipInput
                   date={value.start}
                   label="Start date"
@@ -218,7 +218,7 @@ function Footer({
                   }
                 />
               </div>
-              <span className="rounded-xl bg-background-tertiary-default px-2 py-2 text-body-medium text-text-secondary">
+              <span className="rounded-xl bg-background-tertiary-default px-2 py-1 text-body-medium text-text-secondary">
                 {daysInRange(value)} day{daysInRange(value) === 1 ? "" : "s"}{" "}
                 selected
               </span>
@@ -226,11 +226,11 @@ function Footer({
           )}
         </AnimatePresence>
       </div>
-      <div className="flex items-center gap-2.5">
-        <Button variant="secondary" onClick={onCancel}>
+      <div className="flex items-center gap-1.5">
+        <Button variant="secondary" size="small" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={onApply} disabled={!value}>
+        <Button size="small" onClick={onApply} disabled={!value}>
           Apply
         </Button>
       </div>
@@ -311,15 +311,15 @@ export function DateRangePicker({
               value={pendingValue}
               onChange={setPendingValue}
             >
-              <div className="flex gap-3">
-                <div className="pt-4 pl-4">
+              <div className="flex gap-2">
+                <div className="pt-3 pl-3">
                   <QuickSelect
                     value={pendingValue}
                     onSelect={(range) => setPendingValue(range)}
                   />
                 </div>
-                <div className="flex flex-col pt-2 pr-2 pb-3">
-                  <div className="flex gap-2">
+                <div className="flex flex-col pt-2 pr-2 pb-2">
+                  <div className="flex gap-1.5">
                     <MonthPanel offset={0} showPrev />
                     <MonthPanel offset={1} showNext />
                   </div>

@@ -107,7 +107,7 @@ export function DayCell(props: CalendarCellRenderProps & { isRange: boolean }) {
   } = props;
 
   if (isOutsideMonth) {
-    return <div className="size-8" />;
+    return <div className="size-7" />;
   }
 
   const dayOfWeek = date.toDate(getLocalTimeZone()).getDay(); // 0 = Sun ... 6 = Sat
@@ -139,13 +139,13 @@ export function DayCell(props: CalendarCellRenderProps & { isRange: boolean }) {
   // square in sync with the fade instead of snapping to square immediately
   // while the color is still visible.
   return (
-    <div className="relative size-8">
+    <div className="relative size-7">
       <span
         aria-hidden
         className={cx(
           "absolute inset-y-0 bg-date-range-background transition-[opacity,border-radius] duration-100 ease-out",
-          isSelectionStart ? "left-1/2" : extendLeft ? "-left-1.5" : "left-0",
-          isSelectionEnd ? "right-1/2" : extendRight ? "-right-1.5" : "right-0",
+          isSelectionStart ? "left-1/2" : extendLeft ? "-left-1" : "left-0",
+          isSelectionEnd ? "right-1/2" : extendRight ? "-right-1" : "right-0",
           !isSelectionStart && dayOfWeek === 0 && "rounded-l-lg",
           !isSelectionEnd && dayOfWeek === 6 && "rounded-r-lg",
           isSelected && !isSingleDay ? "opacity-100" : "opacity-0",
@@ -153,7 +153,7 @@ export function DayCell(props: CalendarCellRenderProps & { isRange: boolean }) {
       />
       <div
         className={cx(
-          "relative flex size-8 items-center justify-center rounded-lg outline-none",
+          "relative flex size-7 items-center justify-center rounded-lg outline-none",
           !isSelected && isHovered && "bg-background-secondary-hover",
           "transition-colors duration-100 ease-out",
           isFocusVisible && "ring-2 ring-inset ring-border-focus-ring",
@@ -223,11 +223,11 @@ export function MonthPanel({
     <div
       className={
         bare
-          ? "w-[296px] shrink-0"
-          : "w-[326px] shrink-0 rounded-2xl bg-background-primary-default p-[15px] shadow-xs"
+          ? "w-[256px] shrink-0"
+          : "w-[280px] shrink-0 rounded-2xl bg-background-primary-default p-3 shadow-xs"
       }
     >
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3">
         {!hideHeader && (
           <div className="flex items-center justify-between">
             {showPrev ? (
@@ -258,12 +258,12 @@ export function MonthPanel({
         <CalendarGrid
           offset={{ months: offset }}
           weekdayStyle="short"
-          className="-m-3 self-start border-separate outline-none"
-          style={{ borderSpacing: "12px 12px" }}
+          className="-m-2 self-start border-separate outline-none"
+          style={{ borderSpacing: "8px 8px" }}
         >
           <CalendarGridHeader>
             {(day) => (
-              <CalendarHeaderCell className="size-6 pb-0 text-center text-body-medium text-text-secondary">
+              <CalendarHeaderCell className="size-7 pb-0 text-center text-body-medium text-text-secondary">
                 {day.slice(0, 2)}
               </CalendarHeaderCell>
             )}
@@ -321,7 +321,7 @@ export function DateChipInput({
         if (event.key === "Escape") setText(formatted);
       }}
       aria-label={label}
-      className="w-[104px] rounded-2lg border border-border-button-default bg-background-primary-default px-2 py-2 text-body-medium text-text-primary shadow-xs outline-none transition-colors duration-100 ease-out focus-visible:border-border-button-active"
+      className="w-[92px] rounded-2lg border border-border-button-default bg-background-primary-default px-2 py-1.5 text-body-medium text-text-primary shadow-xs outline-none transition-colors duration-100 ease-out focus-visible:border-border-button-active"
     />
   );
 }
@@ -329,7 +329,7 @@ export function DateChipInput({
 /** Shared trigger-button chrome for both pickers (Figma's "Primary" button —
  *  calendar icon + formatted-value text, white surface, radius/2lg). */
 export const triggerButtonClassName = cx(
-  "inline-flex shrink-0 cursor-pointer items-center gap-0.5 rounded-2lg border border-border-button-default bg-background-primary-default p-2 shadow-xs outline-none",
+  "inline-flex shrink-0 cursor-pointer items-center gap-0.5 rounded-2lg border border-border-button-default bg-background-primary-default p-1.5 shadow-xs outline-none",
   "transition-[background-color,border-color,box-shadow] duration-150 ease",
   "hover:bg-background-primary-hover hover:border-border-button-hover",
   "focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-border-focus-ring",
