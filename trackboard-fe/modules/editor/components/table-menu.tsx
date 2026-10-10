@@ -1,12 +1,15 @@
 "use client";
 
 import { ArrowsInLineHorizontal, Columns, DotsThree, Plus, Rows, SquareSplitHorizontal, Table, Trash } from "@/components/icons";
+import { CellSelection } from "@tiptap/pm/tables";
 import type { Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { useEffect, useRef, useState } from "react";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 
-/** Row, column and cell actions, shown while the caret is inside a table. */
+/** Row, column and cell actions, shown while the caret is inside a table — including while a block of cells
+ * is selected, which is exactly when "delete column/row" is wanted; the selection isn't empty then, so this
+ * also has to accept a CellSelection and not just a plain caret. */
 export function TableMenu({ editor }: { editor: Editor }) {
   const run = (fn: (c: ReturnType<Editor["chain"]>) => ReturnType<Editor["chain"]>) => fn(editor.chain().focus()).run();
   return (
@@ -14,7 +17,7 @@ export function TableMenu({ editor }: { editor: Editor }) {
       <BubbleMenu
         editor={editor}
         pluginKey="tableMenu"
-        shouldShow={({ editor: e, state }) => e.isEditable && e.isActive("table") && state.selection.empty}
+        shouldShow={({ editor: e, state }) => e.isEditable && e.isActive("table") && (state.selection.empty || state.selection instanceof CellSelection)}
         appendTo={() => document.body}
         options={{ strategy: "fixed", placement: "top-start", offset: 8, shift: { padding: 12 } }}
         getReferencedVirtualElement={() => {

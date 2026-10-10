@@ -1,10 +1,13 @@
 "use client";
 
+import { Icon } from "@iconify/react";
 import { mergeAttributes, Node } from "@tiptap/core";
 import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from "@tiptap/react";
-import { DownloadSimple, FileText } from "@/components/icons";
+import { DownloadSimple } from "@/components/icons";
 import { cx } from "@/lib/cx";
+import { fileIcon, fileLabel } from "@/lib/file-type";
 import { formatBytes } from "@/lib/files";
+import { openFilePreview } from "../../lib/file-preview-store";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -12,23 +15,25 @@ declare module "@tiptap/core" {
   }
 }
 
-/** An attached file: name, type and size, with a download link. */
+/** An attached file: a type-matched icon (PDF, Word, Excel, image, …), name and size. Click opens the full
+ * preview; the download link sits to the side so it doesn't fight that click. */
 function FileView({ node, selected }: ReactNodeViewProps) {
   const { src, name, size, mime } = node.attrs as { src: string; name: string; size: number; mime: string };
-  const ext = name.includes(".") ? name.split(".").pop()?.toUpperCase() : (mime.split("/")[1] ?? "FILE").toUpperCase();
   return (
     <NodeViewWrapper className={cx("tb-file", selected && "is-selected")} data-drag-handle>
-      <div className="tb-file-icon" aria-hidden="true">
-        <FileText size={20} />
-      </div>
-      <div className="min-w-0 flex-1" contentEditable={false}>
-        <p className="truncate font-medium">{name}</p>
-        <p className="text-xs text-ink-3">
-          {ext} · {formatBytes(size)}
-        </p>
-      </div>
-      <a href={src} download={name} className="tb-file-download" aria-label={`Download ${name}`} title="Download" contentEditable={false}>
-        <DownloadSimple size={17} />
+      <button type="button" className="tb-file-open" onClick={() => openFilePreview({ src, name, size, mime })} contentEditable={false}>
+        <span className="tb-file-icon" aria-hidden="true">
+          <Icon icon={fileIcon(name, mime)} width={22} height={22} />
+        </span>
+        <span className="min-w-0 flex-1 text-left">
+          <span className="block truncate font-medium">{name}</span>
+          <span className="block text-xs text-ink-3">
+            {fileLabel(name, mime)} · {formatBytes(size)}
+          </span>
+        </span>
+      </button>
+      <a href={src} download={name} className="tb-file-download" aria-label={`Download ${name}`} title="Download" contentEditable={false} onClick={(e) => e.stopPropagation()}>
+        <DownloadSimple size={16} />
       </a>
     </NodeViewWrapper>
   );

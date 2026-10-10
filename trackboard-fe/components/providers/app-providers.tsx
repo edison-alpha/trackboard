@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
 import { PromptHost } from "@/components/ui/prompt";
 import { loadDock } from "@/modules/ai/lib/dock-store";
+import { FilePreviewDialog } from "@/modules/editor/components/file-preview-dialog";
 import { loadProfile, watchProfileAcrossTabs } from "@/modules/profile";
 import { loadUiPrefs } from "@/modules/shell";
 import { loadExpanded } from "@/modules/sidebar";
@@ -25,6 +26,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <MotionConfig reducedMotion="user">
         {children}
         <PromptHost />
+        <FilePreviewDialog />
         <ThemedToaster />
       </MotionConfig>
     </ThemeProvider>

@@ -6,7 +6,6 @@ import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-detai
 import { Emoji, gitHubEmojis, type EmojiItem } from "@tiptap/extension-emoji";
 import { FileHandler } from "@tiptap/extension-file-handler";
 import { Highlight } from "@tiptap/extension-highlight";
-import { Image } from "@tiptap/extension-image";
 import { InvisibleCharacters } from "@tiptap/extension-invisible-characters";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { Mathematics } from "@tiptap/extension-mathematics";
@@ -18,7 +17,6 @@ import { TextAlign } from "@tiptap/extension-text-align";
 import { TextStyleKit } from "@tiptap/extension-text-style";
 import { Typography } from "@tiptap/extension-typography";
 import { UniqueID } from "@tiptap/extension-unique-id";
-import { Youtube } from "@tiptap/extension-youtube";
 import { CharacterCount, Focus, Placeholder } from "@tiptap/extensions";
 import { Markdown } from "@tiptap/markdown";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -36,7 +34,10 @@ import { Column, Columns } from "./nodes/columns";
 import { DateChip } from "./nodes/date-chip";
 import { Embed } from "./nodes/embed";
 import { FileBlock } from "./nodes/file-block";
+import { Heading } from "./nodes/heading";
+import { Image } from "./nodes/image";
 import { TocBlock } from "./nodes/toc-block";
+import { Youtube } from "./nodes/youtube";
 import { SlashCommand } from "./slash-command";
 
 const lowlight = createLowlight(common);
@@ -66,10 +67,11 @@ export function buildExtensions(o: BuildOptions): AnyExtension[] {
       // Collaboration brings its own history that only undoes your own changes.
       undoRedo: false,
       codeBlock: false,
-      heading: { levels: [1, 2, 3, 4] },
+      heading: false,
       link: { openOnClick: false, autolink: true, defaultProtocol: "https", HTMLAttributes: { rel: "noopener noreferrer nofollow", target: "_blank" } },
       dropcursor: { color: "var(--accent)", width: 2 },
     }),
+    Heading.configure({ levels: [1, 2, 3, 4] }),
     CodeBlockLowlight.configure({ lowlight, defaultLanguage: null }),
     Placeholder.configure({
       includeChildren: false,
