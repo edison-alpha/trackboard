@@ -44,6 +44,15 @@ import {
 import { PageCover, PageTitleBlock } from "./page-header";
 import { PageMenu } from "./page-menu";
 
+/** The page text for the task dialog. The editor is rebuilt when access changes, so it may be mid-teardown: then there is none. */
+function textOf(editor: Editor | null): string {
+  try {
+    return editor && !editor.isDestroyed ? editor.getText({ blockSeparator: "\n" }).slice(0, 4000) : "";
+  } catch {
+    return "";
+  }
+}
+
 function Breadcrumbs({ page }: { page: PageMeta }) {
   const pages = usePages();
   const chain = ancestorsOf(pages, page.id);
@@ -125,8 +134,8 @@ export function PageView({ pageId }: { pageId: string }) {
 }
 
 function PageDocument({ page }: { page: PageMeta }) {
-  const { profile } = useWorkspace();
-  const state = useCollabDoc(scopedDocName(profile.workspaceId, pageDocName(page.id)));
+  // The document lives in the page's own workspace, which is not always the person's (a page shared by someone else).
+  const state = useCollabDoc(scopedDocName(page.workspaceId, pageDocName(page.id)));
   if (state.status === "error") {
     return (
       <>
@@ -334,7 +343,7 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
         onOpenChange={setTicketDialogOpen}
         pageId={page.id}
         pageTitle={displayTitle(page)}
-        pageText={editor?.getText({ blockSeparator: "\n" }).slice(0, 4000) ?? page.preview}
+        pageText={textOf(editor) || page.preview}
         linkedTickets={page.linkedTickets}
         // The server stored the ticket; the page list carries it, so refetch that.
         onLinked={() => void queryClient.invalidateQueries({ queryKey: keys.pages(workspaceId) })}

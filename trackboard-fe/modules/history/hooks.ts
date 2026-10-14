@@ -27,7 +27,10 @@ export function useAutoSnapshot(pageId: string, doc: Y.Doc | null, author: Snaps
     const flush = () => {
       if (!dirty.current) return;
       dirty.current = false;
-      void saveSnapshot(pageId, doc, { label: null, author: authorRef.current }).then(() => queryClient.invalidateQueries({ queryKey: keys.snapshots(pageId) }));
+      // Saved in the background: if the person lost edit access a moment ago the server refuses, and that is fine.
+      void saveSnapshot(pageId, doc, { label: null, author: authorRef.current })
+        .then(() => queryClient.invalidateQueries({ queryKey: keys.snapshots(pageId) }))
+        .catch(() => undefined);
     };
     const timer = setInterval(flush, AUTO_EVERY_MS);
     return () => {
