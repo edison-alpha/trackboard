@@ -8,45 +8,24 @@ import { toast } from "sonner";
 import {
   ArrowDown,
   ArrowUp,
-  CaretCircleRight,
+  CaretDown,
+  CaretRight,
   ChatDots,
-  CheckSquare,
-  Code,
   Copy,
   DotsSixVertical,
-  Info,
-  ListBullets,
-  ListNumbers,
   Palette,
   Plus,
-  Quotes,
-  TextHFour,
-  TextHOne,
-  TextHThree,
-  TextHTwo,
   TextT,
   Trash,
 } from "@/components/icons";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuSub, MenuSubContent, MenuSubTrigger, MenuTrigger } from "@/components/ui/menu";
 import { openAi } from "@/modules/ai/lib/ai-store";
+import { hasFoldableContent } from "../extensions/nodes/heading";
+import { BLOCK_TYPES } from "../lib/block-types";
 import { HIGHLIGHTS, TEXT_COLORS } from "../lib/colors";
 
-type Turn = { label: string; icon: React.ReactNode; run: (e: Editor, inside: number) => void };
-
-const TURN_INTO: Turn[] = [
-  { label: "Text", icon: <TextT size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().setParagraph().run() },
-  { label: "Heading 1", icon: <TextHOne size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().setHeading({ level: 1 }).run() },
-  { label: "Heading 2", icon: <TextHTwo size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().setHeading({ level: 2 }).run() },
-  { label: "Heading 3", icon: <TextHThree size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().setHeading({ level: 3 }).run() },
-  { label: "Heading 4", icon: <TextHFour size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().setHeading({ level: 4 }).run() },
-  { label: "Bulleted list", icon: <ListBullets size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().toggleBulletList().run() },
-  { label: "Numbered list", icon: <ListNumbers size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().toggleOrderedList().run() },
-  { label: "To-do list", icon: <CheckSquare size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().toggleTaskList().run() },
-  { label: "Quote", icon: <Quotes size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().toggleBlockquote().run() },
-  { label: "Code block", icon: <Code size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).clearNodes().setCodeBlock().run() },
-  { label: "Callout", icon: <Info size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).setCallout("info").run() },
-  { label: "Toggle", icon: <CaretCircleRight size={16} />, run: (e, p) => e.chain().focus().setTextSelection(p).setDetails().run() },
-];
+/** Blocks with no editable text of their own (image, embed, file, bookmark, contents): nothing to convert or colour. */
+const isStatic = (node: PMNode) => node.isAtom;
 
 /**
  * Left-margin handle on hover. "+" opens the block menu on a new line below; the grip drags the block,
@@ -57,6 +36,22 @@ export function BlockHandle({ editor }: { editor: Editor }) {
   const current = useRef<{ node: PMNode | null; pos: number }>({ node: null, pos: -1 });
   const [menu, setMenu] = useState<{ node: PMNode; pos: number } | null>(null);
   const down = useRef<{ x: number; y: number } | null>(null);
+  const [fold, setFold] = useState<{ pos: number; folded: boolean } | null>(null);
+
+  // A heading with content beneath it turns its grip into a fold caret on hover.
+  const readFold = (node: PMNode | null, pos: number) => {
+    if (!node || pos < 0 || node.type.name !== "heading") return null;
+    const $pos = editor.state.doc.resolve(pos);
+    if (!hasFoldableContent($pos.parent, $pos.index(), node.attrs.level as number)) return null;
+    return { pos, folded: !!node.attrs.folded };
+  };
+
+  const toggleFold = () => {
+    if (!fold) return;
+    const folded = !fold.folded;
+    editor.chain().command(({ tr }) => (tr.setNodeAttribute(fold.pos, "folded", folded), true)).run();
+    setFold({ pos: fold.pos, folded });
+  };
 
   const addBelow = () => {
     const { node, pos } = current.current;
@@ -83,7 +78,10 @@ export function BlockHandle({ editor }: { editor: Editor }) {
   };
 
   return (
-    <DragHandle editor={editor} onNodeChange={({ node, pos }) => (current.current = { node, pos })} className="tb-handle hidden md:flex">
+    <DragHandle editor={editor} onNodeChange={({ node, pos }) => {
+        current.current = { node, pos };
+        setFold(readFold(node, pos));
+      }} className="tb-handle hidden md:flex">
       <div className="relative flex items-center gap-0.5 pr-1.5">
         <button type="button" aria-label="Add a block below" title="Add a block below" onClick={addBelow} className="flex size-6 items-center justify-center rounded-md text-ink-3 hover:bg-surface-2 hover:text-ink">
           <Plus size={15} />
@@ -91,19 +89,35 @@ export function BlockHandle({ editor }: { editor: Editor }) {
         <span
           role="button"
           tabIndex={-1}
-          title="Drag to move, click for options"
-          aria-label="Block options"
+          title={fold ? (fold.folded ? "Expand section" : "Collapse section") : "Drag to move, click for options"}
+          aria-label={fold ? (fold.folded ? "Expand section" : "Collapse section") : "Block options"}
           onMouseDown={(e) => (down.current = { x: e.clientX, y: e.clientY })}
           onClick={(e) => {
             // A drag also ends in a click; only open the menu when the pointer barely moved.
             const d = down.current;
             if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) return;
+            if (fold) return toggleFold();
             const { node, pos } = current.current;
             if (node && pos >= 0) setMenu({ node, pos });
           }}
-          className="flex h-6 w-5 cursor-grab items-center justify-center rounded-md text-ink-3 hover:bg-surface-2 hover:text-ink active:cursor-grabbing"
+          onContextMenu={(e) => {
+            const { node, pos } = current.current;
+            if (!fold || !node || pos < 0) return;
+            e.preventDefault();
+            setMenu({ node, pos });
+          }}
+          className="group/grip flex h-6 w-5 cursor-grab items-center justify-center rounded-md text-ink-3 hover:bg-surface-2 hover:text-ink active:cursor-grabbing"
         >
-          <DotsSixVertical size={16} weight="bold" />
+          {fold ? (
+            <>
+              <DotsSixVertical size={16} weight="bold" className="group-hover/grip:hidden" />
+              <span className="hidden group-hover/grip:block">
+                {fold.folded ? <CaretRight size={14} weight="fill" /> : <CaretDown size={14} weight="fill" />}
+              </span>
+            </>
+          ) : (
+            <DotsSixVertical size={16} weight="bold" />
+          )}
         </span>
 
         <Menu open={!!menu} onOpenChange={(o) => !o && setMenu(null)}>
@@ -112,11 +126,13 @@ export function BlockHandle({ editor }: { editor: Editor }) {
             <span aria-hidden="true" tabIndex={-1} className="pointer-events-none absolute right-1.5 bottom-0 h-6 w-5" />
           </MenuTrigger>
           <MenuContent side="left" align="start" className="w-60">
+            {menu && !isStatic(menu.node) && (
+              <>
             <MenuSub>
               <MenuSubTrigger icon={<TextT size={16} />}>Turn into</MenuSubTrigger>
               <MenuSubContent className="w-52">
-                {TURN_INTO.map((t) => (
-                  <MenuItem key={t.label} icon={t.icon} onSelect={() => menu && t.run(editor, menu.pos + 1)}>
+                {BLOCK_TYPES.map((t) => (
+                  <MenuItem key={t.label} icon={t.icon} onSelect={() => t.apply(editor.chain().focus().setTextSelection(menu.pos + 1).clearNodes()).run()}>
                     {t.label}
                   </MenuItem>
                 ))}
@@ -143,6 +159,8 @@ export function BlockHandle({ editor }: { editor: Editor }) {
             <MenuItem icon={<ChatDots size={16} />} shortcut="Mod+J" onSelect={() => menu && openAi({ scope: "selection", range: { from: menu.pos + 1, to: menu.pos + menu.node.nodeSize - 1 } })}>
               Ask AI about this block
             </MenuItem>
+              </>
+            )}
             <MenuSeparator />
             <MenuItem icon={<Copy size={16} />} shortcut="Mod+D" onSelect={() => menu && editor.chain().focus().duplicateBlock(menu.pos).run()}>
               Duplicate

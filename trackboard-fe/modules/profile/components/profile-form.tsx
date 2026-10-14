@@ -13,15 +13,23 @@ export function ProfileForm({ initial, submitLabel, onDone }: { initial?: Profil
   const [name, setName] = useState(initial?.name ?? "");
   const [color, setColor] = useState<string>(initial?.color ?? PROFILE_COLORS[0]);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     if (name.trim().length < 2) {
       setError("Use at least 2 letters so teammates can recognize your cursor.");
       return;
     }
-    saveProfile({ id: initial?.id, name, color });
-    onDone?.();
+    setSaving(true);
+    try {
+      await saveProfile({ name, color });
+      onDone?.();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -68,7 +76,7 @@ export function ProfileForm({ initial, submitLabel, onDone }: { initial?: Profil
           ))}
         </div>
       </fieldset>
-      <Button type="submit" variant="primary" className="justify-self-start">
+      <Button type="submit" variant="primary" busy={saving} className="justify-self-start">
         {submitLabel}
       </Button>
     </form>

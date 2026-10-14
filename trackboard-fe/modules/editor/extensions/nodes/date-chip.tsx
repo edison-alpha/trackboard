@@ -13,7 +13,9 @@ declare module "@tiptap/core" {
   }
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+/** Local calendar date as YYYY-MM-DD. toISOString() is UTC, which is yesterday for the first hours of the day east of Greenwich. */
+const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const today = () => isoDate(new Date());
 const fmt = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" });
 const label = (iso: string | null | undefined) => {
   if (!iso) return "";
@@ -91,8 +93,8 @@ export const DateChip = Node.create({
         () =>
         ({ commands }) => {
           const start = new Date();
-          const finish = new Date(start.getTime() + 6 * 86_400_000);
-          return commands.insertContent([{ type: this.name, attrs: { date: start.toISOString().slice(0, 10), end: finish.toISOString().slice(0, 10) } }, { type: "text", text: " " }]);
+          const finish = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+          return commands.insertContent([{ type: this.name, attrs: { date: isoDate(start), end: isoDate(finish) } }, { type: "text", text: " " }]);
         },
     };
   },

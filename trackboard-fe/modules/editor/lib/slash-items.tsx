@@ -1,4 +1,5 @@
 import type { Editor, Range } from "@tiptap/core";
+import { toast } from "sonner";
 import {
   ArrowDown,
   ArrowUp,
@@ -44,6 +45,7 @@ import {
   type IconProps,
 } from "@/components/icons";
 import { openAi } from "@/modules/ai/lib/ai-store";
+import { limitMentionsTo } from "../extensions/mention";
 import { HIGHLIGHTS, TEXT_COLORS } from "./colors";
 import { toEmbed } from "./embed-url";
 
@@ -54,6 +56,8 @@ export type EditorContext = {
   pickFile: (editor: Editor) => void;
   /** Creates a child page and returns its id and title, for a link in the current page. */
   createSubpage: () => { id: string; title: string };
+  /** Removes a page made by createSubpage that was never used (the "Undo" on its toast). */
+  discardSubpage: (id: string) => void;
   /** Asks for a value (link, formula). Resolves null when cancelled. */
   prompt: (title: string, placeholder: string) => Promise<string | null>;
   /** Opens a row/column picker before inserting a table. */
@@ -82,10 +86,29 @@ const withUrl = (ctx: EditorContext, title: string, then: (url: string) => void)
     if (url) then(/^[a-z]+:\/\//i.test(url) ? url : `https://${url}`);
   });
 
-/** Applies a colour to every character of the caret's block. */
+/** Deletes every mention node with this id from the document. */
+function removeMentions(editor: Editor, id: string) {
+  const found: { from: number; to: number }[] = [];
+  editor.state.doc.descendants((node, pos) => {
+    if (node.type.name === "mention" && node.attrs.id === id) found.push({ from: pos, to: pos + node.nodeSize });
+  });
+  if (!found.length) return;
+  const { tr } = editor.state;
+  for (const r of found.reverse()) tr.delete(r.from, r.to);
+  editor.view.dispatch(tr);
+}
+
+/** Applies a colour to every character of the caret's block; inside a callout, to the whole callout. */
 function colorBlock(editor: Editor, kind: "text" | "background", value: string | null) {
   const { $from } = editor.state.selection;
-  const range = { from: $from.start(), to: $from.end() };
+  let depth = $from.depth;
+  for (let d = $from.depth; d > 0; d--) {
+    if ($from.node(d).type.name === "callout") {
+      depth = d;
+      break;
+    }
+  }
+  const range = { from: $from.start(depth), to: $from.end(depth) };
   const caret = editor.state.selection.from;
   const c = editor.chain().focus().setTextSelection(range);
   if (kind === "text") (value ? c.setColor(value) : c.unsetColor()).setTextSelection(caret).run();
@@ -157,7 +180,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     group: "Media",
     icon: YoutubeLogo,
     keywords: ["video", "youtube", "embed"],
-    run: (e, r, ctx) => (chain(e, r).run(), withUrl(ctx, "YouTube video link", (src) => e.chain().focus().setYoutubeVideo({ src }).run())),
+    run: (e, r, ctx) => (chain(e, r).run(), withUrl(ctx, "YouTube video link", (src) => e.chain().focus().setYoutubeVideo({ src }).run() || toast.error("That doesn't look like a YouTube link."))),
   },
 
   {
@@ -170,9 +193,13 @@ export const SLASH_ITEMS: SlashItem[] = [
     run: (e, r, ctx) =>
       (chain(e, r).run(),
       withUrl(ctx, "Link to embed", (url) => {
-        if (/youtu\.?be/.test(url)) return e.chain().focus().setYoutubeVideo({ src: url }).run();
+        if (/youtu\.?be/.test(url)) {
+          if (!e.chain().focus().setYoutubeVideo({ src: url }).run()) toast.error("That doesn't look like a YouTube link.");
+          return;
+        }
         const info = toEmbed(url);
         if (info) e.chain().focus().setEmbed({ src: info.src, url, provider: info.provider }).run();
+        else toast.error("That link can't be embedded.");
       })),
   },
   { id: "bookmark", title: "Bookmark", hint: "Link shown as a card", group: "Embeds", icon: BookmarkCard, keywords: ["bookmark", "link", "card", "url", "web"], run: (e, r, ctx) => (chain(e, r).run(), withUrl(ctx, "Link to bookmark", (url) => e.chain().focus().setBookmark({ url }).run())) },
@@ -219,13 +246,15 @@ export const SLASH_ITEMS: SlashItem[] = [
       chain(e, r)
         .insertContent([{ type: "mention", attrs: { id: `page:${page.id}`, label: page.title } }, { type: "text", text: " " }])
         .run();
+      // The page lives in the workspace, so Ctrl+Z only takes the link back out; this undoes both.
+      toast("Page created inside this one", { action: { label: "Undo", onClick: () => (removeMentions(e, `page:${page.id}`), ctx.discardSubpage(page.id)) } });
     },
   },
 
-  { id: "mention-page", title: "Link to page", hint: "Mention another page", group: "Inline", icon: Mention, keywords: ["link", "page", "mention", "@"], run: (e, r) => chain(e, r).insertContent("@").run() },
-  { id: "mention-person", title: "Mention person", hint: "Mention someone on this page", group: "Inline", icon: UserRounded, keywords: ["mention", "person", "people", "user", "@"], run: (e, r) => chain(e, r).insertContent("@").run() },
+  { id: "mention-page", title: "Link to page", hint: "Pick from your pages", group: "Inline", icon: Mention, keywords: ["link", "page", "mention", "@"], run: (e, r) => (limitMentionsTo(e, "page"), chain(e, r).insertContent("@").run()) },
+  { id: "mention-person", title: "Mention person", hint: "Pick from people in this workspace", group: "Inline", icon: UserRounded, keywords: ["mention", "person", "people", "user", "@"], run: (e, r) => (limitMentionsTo(e, "person"), chain(e, r).insertContent("@").run()) },
   { id: "date", title: "Date", hint: "Today's date, click it to pick another", group: "Inline", icon: Calendar, keywords: ["date", "today", "deadline", "due", "calendar"], run: (e, r) => chain(e, r).insertDate().run() },
-  { id: "date-range", title: "Date range", hint: "From and to dates, with quick presets", group: "Inline", icon: Calendar, keywords: ["date", "range", "period", "timeline", "sprint", "from", "to"], run: (e, r) => chain(e, r).insertDateRange().run() },
+  { id: "date-range", title: "Date range", hint: "A week from today, click it to change", group: "Inline", icon: Calendar, keywords: ["date", "range", "period", "timeline", "sprint", "from", "to"], run: (e, r) => chain(e, r).insertDateRange().run() },
   { id: "emoji", title: "Emoji", hint: "Search emoji by name", group: "Inline", icon: Smiley, keywords: ["emoji", "icon", "smile", ":"], run: (e, r) => chain(e, r).insertContent(":").run() },
 
   ...TEXT_COLORS.map(

@@ -52,6 +52,8 @@ export type BuildOptions = {
   context?: EditorContext;
   mentions?: MentionSources;
   onImageFiles?: (files: File[], pos?: number) => void;
+  /** Dropped or pasted files that aren't images, attached as file blocks. */
+  onAttachFiles?: (files: File[], pos?: number) => void;
   onTocUpdate?: (data: TableOfContentData) => void;
   onCommentActivate?: (threadId: string) => void;
   onLinkRequest?: () => void;
@@ -137,13 +139,21 @@ export function buildExtensions(o: BuildOptions): AnyExtension[] {
   ext.push(createMention(o.mentions ?? { pages: () => [], people: () => [] }));
   if (o.onImageFiles) {
     const onImageFiles = o.onImageFiles;
+    const onAttachFiles = o.onAttachFiles;
+    const isImage = (f: File) => /^image\/(png|jpeg|gif|webp|svg\+xml)$/.test(f.type);
+    // No mime filter: every dropped file is claimed here, so the browser never navigates away to open it.
+    const route = (files: File[], pos?: number) => {
+      const images = files.filter(isImage);
+      const others = files.filter((f) => !isImage(f));
+      if (images.length) onImageFiles(images, pos);
+      if (others.length) onAttachFiles?.(others, pos);
+    };
     ext.push(
       FileHandler.configure({
-        allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"],
-        onDrop: (_editor, files, pos) => onImageFiles(files, pos),
+        onDrop: (_editor, files, pos) => route(files, pos),
         onPaste: (_editor, files, html) => {
           // Pasted HTML that carries the image already is handled by the Image extension.
-          if (!html) onImageFiles(files);
+          if (!html) route(files);
         },
       }),
     );

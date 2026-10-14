@@ -4,7 +4,7 @@ import { Image as ImageExtension } from "@tiptap/extension-image";
 import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from "@tiptap/react";
 import { ResizableMedia } from "../../components/resizable-media";
 
-function ImageView({ node, selected, updateAttributes }: ReactNodeViewProps) {
+function ImageView({ node, selected, updateAttributes, editor }: ReactNodeViewProps) {
   const { src, alt, title, width } = node.attrs as { src: string; alt: string | null; title: string | null; width?: number };
   return (
     <NodeViewWrapper className="tb-media-node" data-drag-handle>
@@ -12,6 +12,17 @@ function ImageView({ node, selected, updateAttributes }: ReactNodeViewProps) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt ?? ""} title={title ?? undefined} className="tb-image" draggable={false} />
       </ResizableMedia>
+      {selected && editor.isEditable && (
+        <input
+          value={alt ?? ""}
+          onChange={(e) => updateAttributes({ alt: e.target.value })}
+          onKeyDown={(e) => e.stopPropagation()}
+          placeholder="Describe this image for people who can’t see it"
+          aria-label="Image description (alt text)"
+          contentEditable={false}
+          className="tb-image-alt"
+        />
+      )}
     </NodeViewWrapper>
   );
 }

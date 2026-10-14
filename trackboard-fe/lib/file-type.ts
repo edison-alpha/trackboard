@@ -116,10 +116,3 @@ export function filePreviewKind(name: string, mime: string): PreviewKind {
   return fileTypeInfo(name, mime).preview;
 }
 
-/** Decodes a data: URL produced by readFile() back into text, for the text/code/markdown preview. */
-export function decodeDataUrlText(dataUrl: string): string {
-  const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-  const binary = atob(base64);
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}

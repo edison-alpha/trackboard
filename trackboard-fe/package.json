@@ -11,7 +11,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.133.0",
     "@base-ui/react": "^1.9.0",
     "@floating-ui/dom": "^1.7.4",
     "@hocuspocus/provider": "4.7.0",
@@ -54,7 +53,6 @@
     "class-variance-authority": "^0.7.1",
     "cmdk": "1.1.1",
     "cn": "^0.4.0",
-    "idb-keyval": "^6.2.2",
     "katex": "0.16.22",
     "lib0": "0.2.119",
     "lowlight": "3.3.0",
@@ -66,7 +64,6 @@
     "react": "19.3.0",
     "react-aria-components": "^1.22.0",
     "react-dom": "19.3.0",
-    "server-only": "^0.0.1",
     "shadcn": "^4.21.4",
     "sonner": "2.0.8",
     "tailwind-merge": "3.7.0",

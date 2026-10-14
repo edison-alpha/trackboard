@@ -5,7 +5,6 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from "@tiptap/react";
-import { CaretDown, CaretRight } from "@/components/icons";
 import { cx } from "@/lib/cx";
 
 type HeadingAttrs = { level: 1 | 2 | 3 | 4; folded: boolean };
@@ -16,32 +15,17 @@ function isFoldStop(node: PMNode, level: number): boolean {
   return node.type.name === "heading" && (node.attrs.level as number) <= level;
 }
 
-function hasFoldableContent(parent: PMNode, index: number, level: number): boolean {
+export function hasFoldableContent(parent: PMNode, index: number, level: number): boolean {
   const next = parent.maybeChild(index + 1);
   return !!next && !isFoldStop(next, level);
 }
 
-function HeadingView({ node, editor, getPos, updateAttributes }: ReactNodeViewProps) {
+function HeadingView({ node }: ReactNodeViewProps) {
   const { level, folded } = node.attrs as HeadingAttrs;
-  const pos = getPos();
-  const resolved = typeof pos === "number" ? editor.state.doc.resolve(pos) : null;
-  const foldable = !!resolved && hasFoldableContent(resolved.parent, resolved.index(), level);
   const Tag = `h${level}` as HeadingTag;
 
   return (
     <NodeViewWrapper as={Tag} className={cx("tb-heading", folded && "is-folded")} data-drag-handle>
-      {foldable && (
-        <button
-          type="button"
-          contentEditable={false}
-          className="tb-heading-fold"
-          aria-label={folded ? "Expand section" : "Collapse section"}
-          aria-expanded={!folded}
-          onClick={() => updateAttributes({ folded: !folded })}
-        >
-          {folded ? <CaretRight size={13} weight="fill" /> : <CaretDown size={13} weight="fill" />}
-        </button>
-      )}
       <NodeViewContent<"span"> as="span" className="tb-heading-text" />
     </NodeViewWrapper>
   );
@@ -79,8 +63,8 @@ function foldDecorations(doc: PMNode): DecorationSet {
 }
 
 /**
- * Notion-style collapsible headings. Hovering a heading that has content under it reveals a caret in its
- * left margin; clicking it folds everything up to the next heading of the same or a shallower level. Folded
+ * Notion-style collapsible headings. Hovering the block handle of a heading that has content under it turns
+ * the grip into a caret (see BlockHandle); clicking it folds everything up to the next heading of the same or a shallower level. Folded
  * state is a node attribute, so it round-trips through collaboration and survives reloads.
  */
 export const Heading = HeadingExtension.extend({

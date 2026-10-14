@@ -7,7 +7,6 @@ import { Button, IconButton } from "@/components/ui/button";
 import { askConfirm } from "@/components/ui/prompt";
 import { EmptyState } from "@/components/ui/states";
 import { timeAgo } from "@/lib/time";
-import { deleteSnapshots } from "@/modules/history";
 import { Topbar } from "@/modules/shell";
 import { descendantCount, displayTitle, pageHref, trashOf, usePageActions, usePages } from "@/modules/workspace";
 
@@ -27,7 +26,6 @@ export function TrashView() {
     });
     if (!ok) return;
     await actions.deleteForever(id);
-    await deleteSnapshots(id).catch(() => {});
   };
 
   const emptyTrash = async () => {
@@ -35,7 +33,6 @@ export function TrashView() {
     if (!ok) return;
     for (const p of list) {
       await actions.deleteForever(p.id);
-      await deleteSnapshots(p.id).catch(() => {});
     }
   };
 

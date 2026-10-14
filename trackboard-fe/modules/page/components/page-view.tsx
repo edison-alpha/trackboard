@@ -29,6 +29,7 @@ import {
   livePages,
   pageDocName,
   pageHref,
+  scopedDocName,
   usePage,
   usePageActions,
   usePages,
@@ -120,7 +121,8 @@ export function PageView({ pageId }: { pageId: string }) {
 }
 
 function PageDocument({ page }: { page: PageMeta }) {
-  const state = useCollabDoc(pageDocName(page.id));
+  const { profile } = useWorkspace();
+  const state = useCollabDoc(scopedDocName(profile.workspaceId, pageDocName(page.id)));
   if (state.status === "error") {
     return (
       <>
@@ -129,7 +131,7 @@ function PageDocument({ page }: { page: PageMeta }) {
         </Topbar>
         <ErrorState
           title="Couldn't open this page"
-          body={`The document didn't load from browser storage (${state.error.message}). Reload to try again.`}
+          body={`The document didn't load (${state.error.message}). Check your connection, then reload to try again.`}
           action={
             <Button variant="primary" onClick={() => location.reload()}>
               Reload
@@ -139,7 +141,7 @@ function PageDocument({ page }: { page: PageMeta }) {
       </>
     );
   }
-  if (state.status === "loading") {
+  if (state.status !== "ready") {
     return (
       <>
         <Topbar>
@@ -206,6 +208,7 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
         const id = actions.create({ parentId: page.id, open: false });
         return { id, title: "Untitled" };
       },
+      discardSubpage: (id: string) => void actions.deleteForever(id),
       prompt: (title: string, placeholder: string) => askText({ title, placeholder }),
     }),
     [actions, page.id],

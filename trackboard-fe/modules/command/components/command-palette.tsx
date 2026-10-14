@@ -57,7 +57,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     { id: "shortcuts", label: "Show keyboard shortcuts", icon: <Keyboard size={17} />, shortcut: "Mod+/", run: () => setUi({ shortcuts: true }) },
     { id: "trash", label: "Open trash", icon: <Trash size={17} />, run: () => router.push("/trash") },
     { id: "profile", label: "Change your name and cursor color", icon: <UserCircle size={17} />, run: () => setUi({ profile: true }) },
-    { id: "switch-user", label: "Switch person in this tab", icon: <UserSwitch size={17} />, run: signOut },
+    { id: "sign-out", label: "Sign out", icon: <UserSwitch size={17} />, run: () => void signOut() },
   ].filter((c) => !q || c.label.toLowerCase().includes(q));
 
   return (

@@ -22,6 +22,7 @@ import { Menu, MenuCheckItem, MenuContent, MenuItem, MenuLabel, MenuSeparator, M
 import { askConfirm } from "@/components/ui/prompt";
 import { downloadText, pickFile, slugify } from "@/lib/files";
 import { actionsFor, openAi } from "@/modules/ai";
+import { restoreCallouts } from "@/modules/editor/lib/markdown";
 import { togglePanel } from "@/modules/shell";
 import { displayTitle, usePageActions, type PageMeta } from "@/modules/workspace";
 
@@ -34,6 +35,7 @@ export function PageMenu({ page, editor }: { page: PageMeta; editor: Editor | nu
     if (!editor) return;
     const md = `# ${displayTitle(page)}\n\n${editor.getMarkdown()}`;
     downloadText(`${slugify(displayTitle(page))}.md`, md);
+    toast.message("Exported as Markdown", { description: "Uploaded files, embeds, comments and columns layout are not included." });
   };
 
   const importMarkdown = async () => {
@@ -43,13 +45,14 @@ export function PageMenu({ page, editor }: { page: PageMeta; editor: Editor | nu
     if (!editor.isEmpty) {
       const ok = await askConfirm({
         title: "Replace this page's content?",
-        body: `${file.name} will replace what's on this page. You can bring the current version back from Version history.`,
+        body: `${file.name} will replace what's on this page, including files, embeds and comments. You can bring the current version back from Version history.`,
         confirmLabel: "Replace content",
       });
       if (!ok) return;
     }
     try {
       editor.commands.setContent(await file.text(), { contentType: "markdown" });
+      restoreCallouts(editor);
       toast.success(`Imported ${file.name}`);
     } catch {
       toast.error("That file couldn't be read as Markdown.");

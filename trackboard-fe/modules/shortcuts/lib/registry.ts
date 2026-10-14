@@ -6,7 +6,7 @@ export type ShortcutGroup = "Navigation" | "Page" | "Text" | "Blocks" | "Insert"
 export type Shortcut = { id: string; keys: string; label: string; group: ShortcutGroup; global?: boolean };
 
 export const SHORTCUTS: Shortcut[] = [
-  { id: "palette", keys: "Mod+K", label: "Search pages and commands", group: "Navigation", global: true },
+  { id: "palette", keys: "Mod+K", label: "Search pages and commands (elsewhere)", group: "Navigation", global: true },
   { id: "shortcuts", keys: "Mod+/", label: "Show shortcuts", group: "Navigation", global: true },
   { id: "sidebar", keys: "Mod+\\", label: "Show or hide the sidebar", group: "Navigation", global: true },
   { id: "theme", keys: "Alt+T", label: "Switch light and dark", group: "Navigation", global: true },
@@ -23,8 +23,9 @@ export const SHORTCUTS: Shortcut[] = [
   { id: "strike", keys: "Mod+Shift+S", label: "Strikethrough", group: "Text" },
   { id: "code", keys: "Mod+E", label: "Inline code", group: "Text" },
   { id: "highlight", keys: "Mod+Shift+H", label: "Highlight", group: "Text" },
-  { id: "link", keys: "Mod+K", label: "Link (with text selected)", group: "Text" },
+  { id: "link", keys: "Mod+K", label: "Link (text selected, or caret in a link)", group: "Text" },
   { id: "sub", keys: "Mod+,", label: "Subscript", group: "Text" },
+  { id: "link-open", keys: "Mod+Click", label: "Open a link (a plain click edits it)", group: "Text" },
   { id: "sup", keys: "Mod+.", label: "Superscript", group: "Text" },
   { id: "undo", keys: "Mod+Z", label: "Undo", group: "Text" },
   { id: "redo", keys: "Mod+Shift+Z", label: "Redo", group: "Text" },
@@ -46,6 +47,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: "duplicate", keys: "Mod+D", label: "Duplicate block", group: "Blocks" },
   { id: "indent", keys: "Tab", label: "Indent list item", group: "Blocks" },
   { id: "outdent", keys: "Shift+Tab", label: "Outdent list item", group: "Blocks" },
+  { id: "cell-next", keys: "Tab", label: "Next table cell (adds a row at the end)", group: "Blocks" },
+  { id: "cell-prev", keys: "Shift+Tab", label: "Previous table cell", group: "Blocks" },
 
   { id: "ai", keys: "Mod+J", label: "Ask AI (selection or cursor)", group: "Insert" },
   { id: "slash", keys: "/", label: "Block menu", group: "Insert" },
@@ -55,6 +58,11 @@ export const SHORTCUTS: Shortcut[] = [
   { id: "md-list", keys: "-", label: "Bulleted list (- then space)", group: "Insert" },
   { id: "md-task", keys: "[]", label: "To-do list ([] then space)", group: "Insert" },
   { id: "md-code", keys: "```", label: "Code block", group: "Insert" },
+  { id: "md-quote", keys: ">", label: "Quote (> then space)", group: "Insert" },
+  { id: "md-ol", keys: "1.", label: "Numbered list (1. then space)", group: "Insert" },
+  { id: "md-divider", keys: "---", label: "Divider (--- then Enter)", group: "Insert" },
+  { id: "md-inline", keys: "**", label: "Bold, italic, code: **bold**, *italic*, `code`", group: "Insert" },
+  { id: "auto-symbols", keys: "->", label: "Turns into symbols: -> becomes an arrow, (c) a copyright sign, :) an emoji", group: "Insert" },
 ];
 
 const CODES: Record<string, string> = { "/": "Slash", "\\": "Backslash", ",": "Comma", ".": "Period" };

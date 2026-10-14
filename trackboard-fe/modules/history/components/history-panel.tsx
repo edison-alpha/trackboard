@@ -3,7 +3,7 @@
 import { ArrowCounterClockwise, BookmarkSimple, X } from "@/components/icons";
 import type { Editor } from "@tiptap/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type * as Y from "yjs";
 import { InlineLoader } from "@/components/brand/loading-screen";
@@ -16,14 +16,14 @@ import { cx } from "@/lib/cx";
 import { formatDateTime, timeAgo } from "@/lib/time";
 import { PreviewEditor } from "@/modules/editor";
 import { useSnapshots } from "../hooks";
-import { docFromSnapshot, saveSnapshot, type Snapshot } from "../lib/snapshots";
+import { docFromSnapshot, getSnapshot, saveSnapshot, type SnapshotMeta } from "../lib/snapshots";
 
-type Props = { open: boolean; onClose: () => void; pageId: string; doc: Y.Doc; editor: Editor | null; author: Snapshot["author"] };
+type Props = { open: boolean; onClose: () => void; pageId: string; doc: Y.Doc; editor: Editor | null; author: SnapshotMeta["author"] };
 
 /** Saved versions of the page: preview any of them and restore it as a new edit everyone sees. */
 export function HistoryPanel({ open, onClose, pageId, doc, editor, author }: Props) {
   const { state, reload } = useSnapshots(pageId, open);
-  const [selected, setSelected] = useState<Snapshot | null>(null);
+  const [selected, setSelected] = useState<SnapshotMeta | null>(null);
   const [saving, setSaving] = useState(false);
 
   const saveNamed = async () => {
@@ -34,8 +34,8 @@ export function HistoryPanel({ open, onClose, pageId, doc, editor, author }: Pro
       await saveSnapshot(pageId, doc, { label, author });
       reload();
       toast.success(`Saved version "${label}"`);
-    } catch {
-      toast.error("Couldn't save the version. Browser storage may be full.");
+    } catch (err) {
+      toast.error(`Couldn't save the version. ${(err as Error).message}`);
     } finally {
       setSaving(false);
     }
@@ -57,7 +57,7 @@ export function HistoryPanel({ open, onClose, pageId, doc, editor, author }: Pro
         {state.status === "error" && (
           <ErrorState
             title="Couldn't read the history"
-            body="The browser blocked access to its storage."
+            body="Trackdocs couldn't reach the server. Check your connection and try again."
             action={
               <Button variant="glass" onClick={reload}>
                 Try again
@@ -90,13 +90,27 @@ export function HistoryPanel({ open, onClose, pageId, doc, editor, author }: Pro
           </ol>
         )}
       </SidePanel>
-      <VersionPreview snapshot={selected} onClose={() => setSelected(null)} liveEditor={editor} onRestored={onClose} />
+      <VersionPreview pageId={pageId} snapshot={selected} onClose={() => setSelected(null)} liveEditor={editor} onRestored={onClose} />
     </>
   );
 }
 
-function VersionPreview({ snapshot, onClose, liveEditor, onRestored }: { snapshot: Snapshot | null; onClose: () => void; liveEditor: Editor | null; onRestored: () => void }) {
-  const doc = useMemo(() => (snapshot ? docFromSnapshot(snapshot) : null), [snapshot]);
+function VersionPreview({ pageId, snapshot, onClose, liveEditor, onRestored }: { pageId: string; snapshot: SnapshotMeta | null; onClose: () => void; liveEditor: Editor | null; onRestored: () => void }) {
+  // The list carries no document bytes; the chosen version is fetched when it is opened.
+  const [loaded, setLoaded] = useState<{ id: string; doc: Y.Doc } | { id: string; error: string } | null>(null);
+  useEffect(() => {
+    if (!snapshot) return;
+    let alive = true;
+    getSnapshot(pageId, snapshot.id).then(
+      (full) => alive && setLoaded({ id: snapshot.id, doc: docFromSnapshot(full) }),
+      (err: Error) => alive && setLoaded({ id: snapshot.id, error: err.message }),
+    );
+    return () => {
+      alive = false;
+    };
+  }, [pageId, snapshot]);
+  const current = snapshot && loaded?.id === snapshot.id ? loaded : null;
+  const doc = current && "doc" in current ? current.doc : null;
   const [preview, setPreview] = useState<Editor | null>(null);
 
   const restore = () => {
@@ -110,7 +124,7 @@ function VersionPreview({ snapshot, onClose, liveEditor, onRestored }: { snapsho
 
   return (
     <AnimatePresence>
-      {snapshot && doc && (
+      {snapshot && (
         <motion.div
           key={snapshot.id}
           role="dialog"
@@ -140,7 +154,7 @@ function VersionPreview({ snapshot, onClose, liveEditor, onRestored }: { snapsho
           </header>
           <div className="thin-scroll flex-1 overflow-y-auto">
             <div className="mx-auto max-w-[720px] px-5 py-10 sm:px-8">
-              <PreviewEditor doc={doc} onReady={setPreview} />
+              {doc ? <PreviewEditor doc={doc} onReady={setPreview} /> : current && "error" in current ? <ErrorState title="Couldn't open this version" body={current.error} /> : <InlineLoader label="Opening version" />}
             </div>
           </div>
         </motion.div>

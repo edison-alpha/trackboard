@@ -18,6 +18,7 @@ import {
   ChatDots,
   Check,
 } from "@/components/icons";
+import { CellSelection } from "@tiptap/pm/tables";
 import type { Editor } from "@tiptap/react";
 import { useEditorState } from "@tiptap/react";
 import { BubbleMenu as TiptapBubbleMenu } from "@tiptap/react/menus";
@@ -26,19 +27,8 @@ import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } fr
 import { cx } from "@/lib/cx";
 import { useStore, type Store } from "@/lib/store";
 import { openAi } from "@/modules/ai/lib/ai-store";
+import { BLOCK_TYPES } from "../lib/block-types";
 import { HIGHLIGHTS, TEXT_COLORS } from "../lib/colors";
-
-const BLOCK_TYPES = [
-  { label: "Text", is: (e: Editor) => e.isActive("paragraph"), run: (e: Editor) => e.chain().focus().setParagraph().run() },
-  { label: "Heading 1", is: (e: Editor) => e.isActive("heading", { level: 1 }), run: (e: Editor) => e.chain().focus().setHeading({ level: 1 }).run() },
-  { label: "Heading 2", is: (e: Editor) => e.isActive("heading", { level: 2 }), run: (e: Editor) => e.chain().focus().setHeading({ level: 2 }).run() },
-  { label: "Heading 3", is: (e: Editor) => e.isActive("heading", { level: 3 }), run: (e: Editor) => e.chain().focus().setHeading({ level: 3 }).run() },
-  { label: "Bulleted list", is: (e: Editor) => e.isActive("bulletList"), run: (e: Editor) => e.chain().focus().toggleBulletList().run() },
-  { label: "Numbered list", is: (e: Editor) => e.isActive("orderedList"), run: (e: Editor) => e.chain().focus().toggleOrderedList().run() },
-  { label: "To-do list", is: (e: Editor) => e.isActive("taskList"), run: (e: Editor) => e.chain().focus().toggleTaskList().run() },
-  { label: "Quote", is: (e: Editor) => e.isActive("blockquote"), run: (e: Editor) => e.chain().focus().toggleBlockquote().run() },
-  { label: "Code", is: (e: Editor) => e.isActive("codeBlock"), run: (e: Editor) => e.chain().focus().toggleCodeBlock().run() },
-];
 
 function ToolButton({ label, active, onClick, children }: { label: string; active?: boolean; onClick: () => void; children: ReactNode }) {
   return (
@@ -86,7 +76,7 @@ export function BubbleMenu({ editor, linkRequests, onComment }: { editor: Editor
       sub: e.isActive("subscript"),
       sup: e.isActive("superscript"),
       align: e.isActive({ textAlign: "center" }) ? "center" : e.isActive({ textAlign: "right" }) ? "right" : "left",
-      block: BLOCK_TYPES.find((b) => b.is(e))?.label ?? "Text",
+      block: BLOCK_TYPES.find((b) => b.active(e))?.label ?? "Text",
       color: e.getAttributes("textStyle").color as string | undefined,
       highlight: e.getAttributes("highlight").color as string | undefined,
     }),
@@ -112,7 +102,8 @@ export function BubbleMenu({ editor, linkRequests, onComment }: { editor: Editor
       options={{ strategy: "fixed", placement: "top", offset: 10, flip: true, shift: { padding: 12 }, onHide: () => setMode("format") }}
       shouldShow={({ editor: e, state }) => {
         const { empty } = state.selection;
-        if (empty || !e.isEditable) return false;
+        // Selected table cells get the table menu instead.
+        if (empty || !e.isEditable || state.selection instanceof CellSelection) return false;
         return !e.isActive("codeBlock") && !e.isActive("image") && !e.isActive("youtube") && !e.isActive("blockMath") && !e.isActive("inlineMath");
       }}
       className="floating z-40 rounded-(--radius-menu) p-1"
@@ -164,7 +155,7 @@ export function BubbleMenu({ editor, linkRequests, onComment }: { editor: Editor
             <MenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
               <MenuLabel>Turn into</MenuLabel>
               {BLOCK_TYPES.map((b) => (
-                <MenuItem key={b.label} onSelect={() => b.run(editor)} icon={b.label === s.block ? <Check size={14} /> : <span className="w-3.5" />}>
+                <MenuItem key={b.label} onSelect={() => b.apply(editor.chain().focus()).run()} icon={b.label === s.block ? <Check size={14} /> : <span className="w-3.5" />}>
                   {b.label}
                 </MenuItem>
               ))}

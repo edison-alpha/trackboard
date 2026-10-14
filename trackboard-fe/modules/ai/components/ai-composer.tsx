@@ -12,7 +12,7 @@ import { useAiRun } from "../hooks/use-ai-run";
 import { AI_ACTIONS, CUSTOM_ACTION, MAX_INPUT_CHARS, actionsFor, type AiAction, type AiApply, type AiRequest } from "../lib/actions";
 import { closeAi, useAiOpen } from "../lib/ai-store";
 import { AiAvatar, AiThinking, orbStateFor } from "./ai-presence";
-import { applyResult, pageMarkdown, selectionText, textBefore, type Range } from "../lib/apply";
+import { applyResult, pageMarkdown, selectionText, textBefore, trackRange, type Range } from "../lib/apply";
 
 type Props = { editor: Editor; pageTitle: string; onTitle: (title: string) => void };
 
@@ -75,6 +75,9 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
   const [current, setCurrent] = useState<AiAction | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const range = open?.range ?? null;
+  // The range follows the text it was opened on while collaborators edit around it.
+  const tracked = useRef<{ read: () => Range } | null>(null);
+  const liveRange = (): Range => tracked.current?.read() ?? open?.range ?? { from: 0, to: 0 };
   const docked = open?.scope === "page";
   const pos = usePanelPosition(editor, range, docked);
 
@@ -88,7 +91,7 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
   const buildRequest = useCallback(
     (action: AiAction, instruction?: string, refineFrom?: string): AiRequest | string => {
       if (!open) return "Nothing is open.";
-      const r = open.range;
+      const r = liveRange();
       if (refineFrom !== undefined) return { action: "custom-edit", text: refineFrom, instruction };
       switch (action.scope) {
         case "selection": {
@@ -129,6 +132,7 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
   // Fresh state for each opening; presets start immediately.
   useEffect(() => {
     if (!open) return;
+    tracked.current = open.scope === "page" ? null : trackRange(editor, open.range);
     reset();
     setInput("");
     setActive(0);
@@ -165,7 +169,7 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
   const accept = () => {
     if (!open || !current || state.status !== "done") return;
     if (current.apply === "title") onTitle(state.text.split("\n")[0]?.replace(/^#+\s*/, "").trim() ?? "");
-    else applyResult(editor, current.apply, state.text, open.range);
+    else applyResult(editor, current.apply, state.text, liveRange());
     reset();
     closeAi();
   };
@@ -265,7 +269,7 @@ export function AiComposer({ editor, pageTitle, onTitle }: Props) {
                     </Button>
                   )}
                   {current?.apply === "replace" && (
-                    <Button size="sm" variant="glass" onClick={() => (applyResult(editor, "insert-below", state.text, open.range), reset(), closeAi())}>
+                    <Button size="sm" variant="glass" onClick={() => (applyResult(editor, "insert-below", state.text, liveRange()), reset(), closeAi())}>
                       Insert below
                     </Button>
                   )}

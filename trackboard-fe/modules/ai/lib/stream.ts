@@ -1,23 +1,21 @@
+import { ApiError, apiFetch } from "@/lib/api/client";
 import type { AiEvent, AiRequest } from "./actions";
 
 export class AiError extends Error {}
 
 /**
- * Calls POST /api/ai and yields each NDJSON event as it arrives.
+ * Calls POST /api/ai on trackboard-be and yields each NDJSON event as it arrives.
  * Aborting the signal stops the download and the server cancels the upstream request.
  */
 export async function* streamAi(req: AiRequest, signal: AbortSignal): AsyncGenerator<AiEvent> {
   let res: Response;
   try {
-    res = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req), signal });
+    res = await apiFetch("/api/ai", { body: req, signal });
   } catch (err) {
     if (signal.aborted) return;
-    throw new AiError("Couldn't reach the server. Check your connection and try again.", { cause: err });
+    throw new AiError(err instanceof ApiError ? err.message : "Couldn't reach the server. Check your connection and try again.", { cause: err });
   }
-  if (!res.ok || !res.body) {
-    const body = (await res.json().catch(() => null)) as { error?: string } | null;
-    throw new AiError(body?.error ?? `The AI request failed (${res.status}).`);
-  }
+  if (!res.body) throw new AiError(`The AI request failed (${res.status}).`);
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
