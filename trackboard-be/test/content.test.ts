@@ -106,6 +106,22 @@ describe("files", () => {
     expect(await w.status(`/api/files/${rec.id}`)).toBe(404);
   });
 
+  test("a file is cached for a year and revalidates with its ETag", async () => {
+    const { ana, p } = await trio("f0");
+    const rec = await (await upload(ana, png(), p.id)).json();
+    const first = await w.call(`/api/files/${rec.id}`, { cookie: ana.cookie });
+    const etag = first.headers.get("etag")!;
+    expect(etag).toMatch(/^"[0-9a-f]{64}"$/);
+    expect(first.headers.get("cache-control")).toBe("private, max-age=31536000, immutable");
+    const again = await w.app.handle(new Request(`http://api.test/api/files/${rec.id}`, { headers: { cookie: ana.cookie, "if-none-match": etag } }));
+    expect(again.status).toBe(304);
+    expect(await again.text()).toBe("");
+    // Revalidating never skips the access check.
+    const outsider = await w.person("Outsider-f0");
+    const denied = await w.app.handle(new Request(`http://api.test/api/files/${rec.id}`, { headers: { cookie: outsider.cookie, "if-none-match": etag } }));
+    expect(denied.status).toBe(404);
+  });
+
   test("viewers cannot upload to a page, editors can", async () => {
     const { eli, vic, p } = await trio("f2");
     expect((await upload(vic, png(), p.id)).status).toBe(403);

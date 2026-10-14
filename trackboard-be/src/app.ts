@@ -20,7 +20,7 @@ import { clearedStateCookie, finishGoogle, googleConfigured, safeReturnTo, start
 import { acceptInvite, createWorkspaceInvite, listWorkspaceInvites, previewInvite, revokeInvite } from "./lib/invites.ts";
 import { log, requestContext } from "./lib/log.ts";
 import { announceMentions, listNotifications, markRead } from "./lib/notifications.ts";
-import { createPage, duplicatePage, exportPage, listPages, movePage, purgePages, restorePage, setFavorite, trashPage, updatePage } from "./lib/pages.ts";
+import { createPage, duplicatePage, exportPage, listPages, movePage, pageMeta, purgePages, restorePage, setFavorite, trashPage, updatePage } from "./lib/pages.ts";
 import { contextPages, searchPages } from "./lib/search.ts";
 import { clearedSessionCookie, getSession, requireSession, sessionCookie, signToken } from "./lib/session.ts";
 import { getPublicPage, getShareState, removeShare, setPublic, shareWithPerson } from "./lib/shares.ts";
@@ -181,6 +181,8 @@ export function createApp(collab?: CollabHandle) {
         collab?.closeDocuments(names);
         return { ok: true };
       }))
+      // One page as this person sees it: how a link to a page in another workspace (a notification, a share) finds where it lives.
+      .get("/api/pages/:id", authed(async ({ me, params }) => pageMeta(me.id, id(params))))
       .patch("/api/pages/:id", authed(async ({ me, params, body }) => updatePage(me.id, id(params), body as PagePatch)))
       .post("/api/pages/:id/move", authed(async ({ me, params, body }) => movePage(me.id, id(params), body as MovePage)))
       .post("/api/pages/:id/trash", authed(async ({ me, params }) => trashPage(me.id, id(params))))
@@ -242,8 +244,8 @@ export function createApp(collab?: CollabHandle) {
       .get("/api/files/:id", open(async ({ params, request }) => {
         const session = await getSession(request);
         const workspaceId = await authorizeFileRead(session?.userId ?? null, id(params));
-        const file = await readStoredFile(id(params), workspaceId);
-        return new Response(file.body, { headers: file.headers });
+        const file = await readStoredFile(id(params), workspaceId, request.headers.get("if-none-match"));
+        return new Response(file.body, { status: file.status, headers: file.headers });
       }))
 
       // Tickets --------------------------------------------------------------------------------------------------------

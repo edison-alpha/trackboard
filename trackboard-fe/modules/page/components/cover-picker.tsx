@@ -19,7 +19,7 @@ export function CoverPicker({ value, onChange, pageId, children }: { value: stri
     if (!file) return;
     setBusy(true);
     try {
-      onChange((await uploadFile(file, pageId)).url);
+      onChange((await uploadFile(file, pageId, { maxEdge: 2400 })).url);
       setOpen(false);
     } catch (e) {
       toast.error(`Couldn't set the cover: ${(e as Error).message}`);

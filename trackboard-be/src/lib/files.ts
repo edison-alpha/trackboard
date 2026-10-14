@@ -51,21 +51,26 @@ export async function saveFile(input: { workspaceId?: string; pageId?: string; u
 }
 
 /** The file's bytes and the headers to serve it with, or NotFound when it is not in one of the caller's workspaces. */
-export async function readStoredFile(fileId: string, workspaceId: string): Promise<{ body: Uint8Array; headers: Record<string, string> }> {
-  const rows = await (await db()).query<Row>("select id, name, mime, size, workspace_id from files where id = $1 and workspace_id = $2", [fileId, workspaceId]);
+export async function readStoredFile(fileId: string, workspaceId: string, ifNoneMatch?: string | null): Promise<{ body: Uint8Array | null; headers: Record<string, string>; status: 200 | 304 }> {
+  const rows = await (await db()).query<Row & { sha256: string }>("select id, name, mime, size, sha256, workspace_id from files where id = $1 and workspace_id = $2", [fileId, workspaceId]);
   const r = rows[0];
   if (!r) throw new NotFoundError("File not found.");
-  const body = new Uint8Array(await readFile(pathFor(r.workspace_id, r.id)).catch(() => { throw new NotFoundError("File not found."); }));
   const inline = INLINE.test(r.mime);
+  // A file never changes once uploaded, so the browser may keep it for a year and ask only whether it is still the same.
+  const etag = `"${r.sha256}"`;
+  const cache = { etag, "cache-control": "private, max-age=31536000, immutable" };
+  if (ifNoneMatch && ifNoneMatch.split(",").some((t) => t.trim().replace(/^W\//, "") === etag)) return { body: null, status: 304, headers: cache };
+  const body = new Uint8Array(await readFile(pathFor(r.workspace_id, r.id)).catch(() => { throw new NotFoundError("File not found."); }));
   return {
     body,
+    status: 200,
     headers: {
+      ...cache,
       "content-type": inline ? r.mime : "application/octet-stream",
       "content-disposition": `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(r.name)}`,
       "x-content-type-options": "nosniff",
       // A sandboxed PDF is refused by the browser's viewer, and PDFs run in the viewer's own sandbox anyway.
       ...(r.mime === "application/pdf" && inline ? {} : { "content-security-policy": "sandbox; default-src 'none'" }),
-      "cache-control": "private, max-age=86400",
     },
   };
 }
