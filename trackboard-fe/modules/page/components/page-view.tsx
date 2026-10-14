@@ -1,6 +1,7 @@
 "use client";
 
-import { ChatCircleText, FileText, LinkSimple, Star } from "@/components/icons";
+import { useQueryClient } from "@tanstack/react-query";
+import { ChatCircleText, FileText, LinkSimple, Star, UserPlus } from "@/components/icons";
 import type { TableOfContentDataItem } from "@tiptap/extension-table-of-contents";
 import type { Editor } from "@tiptap/react";
 import Link from "next/link";
@@ -15,7 +16,10 @@ import { createId } from "@/lib/id";
 import { PresenceAvatars, SyncStatus, useCollabDoc, usePresence, type CollabDoc } from "@/modules/collab";
 import { AiComposer, AiDock } from "@/modules/ai";
 import { CommentsPanel, threadRequest, useThreads, type CommentDraft } from "@/modules/comments";
-import { recordMention } from "@/modules/inbox";
+import { useAnnounceMentions } from "@/modules/inbox";
+import { ShareDialog } from "@/modules/sharing";
+import { keys } from "@/lib/api/keys";
+import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { DocEditor, TableOfContents } from "@/modules/editor";
 import { HistoryPanel, useAutoSnapshot } from "@/modules/history";
@@ -155,10 +159,13 @@ function PageDocument({ page }: { page: PageMeta }) {
 }
 
 function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
-  const { profile, doc } = useWorkspace();
+  const { profile, workspaceId } = useWorkspace();
+  const queryClient = useQueryClient();
+  const canEdit = page.access !== "view";
+  const announce = useAnnounceMentions(page.id);
   const pages = usePages();
   const actions = usePageActions();
-  const { panel } = useUi();
+  const { panel, share } = useUi();
   const [editor, setEditor] = useState<Editor | null>(null);
   const [toc, setToc] = useState<TableOfContentDataItem[]>([]);
   const [draft, setDraft] = useState<CommentDraft | null>(null);
@@ -174,7 +181,8 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
   peopleRef.current = people;
 
   const user = useMemo(() => ({ id: profile.id, name: profile.name, color: profile.color }), [profile]);
-  useAutoSnapshot(page.id, collab.doc, { name: profile.name, color: profile.color });
+  // Versions are saved from the editor's side, so readers (who cannot change the page) save none.
+  useAutoSnapshot(page.id, canEdit ? collab.doc : null, { name: profile.name, color: profile.color });
 
   // Keep the caret label in sync when the profile changes.
   useEffect(() => {
@@ -244,8 +252,13 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
                 <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-on-accent">{openCount}</span>
               )}
             </IconButton>
-            <Button variant="ghost" size="sm" icon={<LinkSimple size={17} />} onClick={() => setTicketDialogOpen(true)} className="hidden sm:inline-flex">
-              Task
+            {canEdit && (
+              <Button variant="ghost" size="sm" icon={<LinkSimple size={17} />} onClick={() => setTicketDialogOpen(true)} className="hidden sm:inline-flex">
+                Task
+              </Button>
+            )}
+            <Button variant="glass" size="sm" icon={<UserPlus size={16} />} onClick={() => setUi({ share: true })}>
+              Share
             </Button>
             <IconButton label={page.favorite ? "Remove from favorites (Alt+S)" : "Add to favorites (Alt+S)"} active={page.favorite} onClick={() => actions.toggleFavorite(page.id)}>
               <Star size={19} weight={page.favorite ? "fill" : "regular"} />
@@ -271,13 +284,21 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
             <PageTitleBlock page={page} onEnter={() => editor?.commands.focus("start")} />
             <DocEditor
               collab={collab}
+              pageId={page.id}
+              editable={canEdit}
               user={user}
               context={context}
               mentions={mentions}
               template={template}
               onTemplateApplied={() => actions.update(page.id, { template: null })}
-              onLocalChange={(text) => actions.edit(page.id, { text })}
-              onMention={(ids) => ids.forEach((userId) => recordMention(doc, { pageId: page.id, userId, by: profile.id }))}
+              onMention={(ids) =>
+                announce.mutate(ids, {
+                  onSuccess: ({ noAccess }) => {
+                    // People who were mentioned but cannot open the page: offer to share it with them.
+                    if (noAccess.length) toast(`${noAccess.map((p) => p.name).join(", ")} can't open this page yet`, { action: { label: "Share", onClick: () => setUi({ share: true }) } });
+                  },
+                })
+              }
               onTocUpdate={(data) => setToc(data)}
               onComment={startComment}
               onCommentActivate={(id) => {
@@ -306,19 +327,19 @@ function LoadedPage({ page, collab }: { page: PageMeta; collab: CollabDoc }) {
         activeId={activeThread}
         onActivate={setActiveThread}
       />
-      {editor && <AiComposer editor={editor} pageTitle={page.title} onTitle={(title) => title && actions.edit(page.id, { title })} />}
+      {editor && canEdit && <AiComposer editor={editor} pageTitle={page.title} onTitle={(title) => title && actions.edit(page.id, { title })} />}
       <HistoryPanel open={panel === "history"} onClose={() => setUi({ panel: null })} pageId={page.id} doc={collab.doc} editor={editor} author={{ name: profile.name, color: profile.color }} />
       <TicketActions
         open={ticketDialogOpen}
         onOpenChange={setTicketDialogOpen}
         pageId={page.id}
         pageTitle={displayTitle(page)}
-        pageText={page.text}
+        pageText={editor?.getText({ blockSeparator: "\n" }).slice(0, 4000) ?? page.preview}
         linkedTickets={page.linkedTickets}
-        onLinked={(ticket) => {
-          if (!page.linkedTickets.some((linked) => linked.id === ticket.id)) actions.update(page.id, { linkedTickets: [...page.linkedTickets, ticket] });
-        }}
+        // The server stored the ticket; the page list carries it, so refetch that.
+        onLinked={() => void queryClient.invalidateQueries({ queryKey: keys.pages(workspaceId) })}
       />
+      <ShareDialog open={share} onOpenChange={(o) => setUi({ share: o })} page={page} />
     </div>
   );
 }

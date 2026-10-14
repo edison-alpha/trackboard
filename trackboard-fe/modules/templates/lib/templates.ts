@@ -51,14 +51,17 @@ const guide = `
 <li><p>Drag the handle to the left of a block to move it.</p></li>
 </ul>
 <h2>Writing together</h2>
-<p>Open this page in a second tab and sign in there as someone else: you'll see each other's typing and cursor as it happens. To discuss a passage, select it and press the comment icon in the toolbar.</p>
+<p>Press <strong>Share</strong> at the top of a page to invite a teammate by email. When you both have the page open you see each other's cursor and typing as it happens. To discuss a passage, select it and press the comment icon in the toolbar.</p>
+<ul>
+<li><p><strong>Private</strong> pages are only for you and the people you add. <strong>Workspace</strong> pages are open to everyone in the workspace.</p></li>
+<li><p>Turn on <strong>Share to the web</strong> to give anyone with the link a read-only copy.</p></li></ul>
 <h2>Shortcuts</h2>
 <ul data-type="taskList">
 <li data-type="taskItem" data-checked="false"><p>Press <code>Ctrl/⌘ + K</code> to search pages and run commands.</p></li>
 <li data-type="taskItem" data-checked="false"><p>Press <code>Ctrl/⌘ + /</code> to see every shortcut.</p></li>
 <li data-type="taskItem" data-checked="false"><p>Press <code>Alt + N</code> to create a page.</p></li>
 </ul>
-<div data-type="callout" data-tone="info"><p>For now, every page is stored in this browser. Once trackdocs-be is connected, pages sync through the server and teammates can open them on their own devices.</p></div>`;
+<div data-type="callout" data-tone="info"><p>Pages are saved to your account as you type, so they follow you to any device. Every earlier version is kept under Version history in the page menu.</p></div>`;
 
 export const TEMPLATES: Template[] = [
   { id: "meeting", name: "Meeting notes", description: "Agenda, decisions, and follow-ups", icon: "🗓️", title: "Meeting notes", html: meeting },

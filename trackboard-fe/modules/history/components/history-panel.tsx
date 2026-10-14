@@ -3,7 +3,7 @@
 import { ArrowCounterClockwise, BookmarkSimple, X } from "@/components/icons";
 import type { Editor } from "@tiptap/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import type * as Y from "yjs";
 import { InlineLoader } from "@/components/brand/loading-screen";
@@ -15,30 +15,20 @@ import { EmptyState, ErrorState } from "@/components/ui/states";
 import { cx } from "@/lib/cx";
 import { formatDateTime, timeAgo } from "@/lib/time";
 import { PreviewEditor } from "@/modules/editor";
-import { useSnapshots } from "../hooks";
-import { docFromSnapshot, getSnapshot, saveSnapshot, type SnapshotMeta } from "../lib/snapshots";
+import { useSaveVersion, useSnapshotDoc, useSnapshots } from "../hooks";
+import type { SnapshotMeta } from "../lib/snapshots";
 
 type Props = { open: boolean; onClose: () => void; pageId: string; doc: Y.Doc; editor: Editor | null; author: SnapshotMeta["author"] };
 
 /** Saved versions of the page: preview any of them and restore it as a new edit everyone sees. */
 export function HistoryPanel({ open, onClose, pageId, doc, editor, author }: Props) {
-  const { state, reload } = useSnapshots(pageId, open);
+  const versions = useSnapshots(pageId, open);
+  const save = useSaveVersion(pageId);
   const [selected, setSelected] = useState<SnapshotMeta | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const saveNamed = async () => {
     const label = await askText({ title: "Name this version", placeholder: "For example: before client review", confirmLabel: "Save version" });
-    if (!label) return;
-    setSaving(true);
-    try {
-      await saveSnapshot(pageId, doc, { label, author });
-      reload();
-      toast.success(`Saved version "${label}"`);
-    } catch (err) {
-      toast.error(`Couldn't save the version. ${(err as Error).message}`);
-    } finally {
-      setSaving(false);
-    }
+    if (label) save.mutate({ doc, label, author }, { onSuccess: () => toast.success(`Saved version "${label}"`) });
   };
 
   return (
@@ -48,29 +38,29 @@ export function HistoryPanel({ open, onClose, pageId, doc, editor, author }: Pro
         onClose={onClose}
         title="Version history"
         actions={
-          <Button size="sm" variant="glass" icon={<BookmarkSimple size={15} />} busy={saving} onClick={saveNamed}>
+          <Button size="sm" variant="glass" icon={<BookmarkSimple size={15} />} busy={save.isPending} onClick={saveNamed}>
             Save version
           </Button>
         }
       >
-        {state.status === "loading" && <InlineLoader label="Loading history" />}
-        {state.status === "error" && (
+        {versions.isPending && <InlineLoader label="Loading history" />}
+        {versions.isError && (
           <ErrorState
             title="Couldn't read the history"
             body="Trackdocs couldn't reach the server. Check your connection and try again."
             action={
-              <Button variant="glass" onClick={reload}>
+              <Button variant="glass" onClick={() => void versions.refetch()}>
                 Try again
               </Button>
             }
           />
         )}
-        {state.status === "ready" && state.list.length === 0 && (
+        {versions.data && versions.data.length === 0 && (
           <EmptyState title="No saved versions yet" body="A version is saved every 5 minutes while you type. Save a named version before a big change." />
         )}
-        {state.status === "ready" && state.list.length > 0 && (
+        {versions.data && versions.data.length > 0 && (
           <ol className="grid gap-0.5 p-2">
-            {state.list.map((s) => (
+            {versions.data?.map((s) => (
               <li key={s.id}>
                 <button
                   type="button"
@@ -96,21 +86,9 @@ export function HistoryPanel({ open, onClose, pageId, doc, editor, author }: Pro
 }
 
 function VersionPreview({ pageId, snapshot, onClose, liveEditor, onRestored }: { pageId: string; snapshot: SnapshotMeta | null; onClose: () => void; liveEditor: Editor | null; onRestored: () => void }) {
-  // The list carries no document bytes; the chosen version is fetched when it is opened.
-  const [loaded, setLoaded] = useState<{ id: string; doc: Y.Doc } | { id: string; error: string } | null>(null);
-  useEffect(() => {
-    if (!snapshot) return;
-    let alive = true;
-    getSnapshot(pageId, snapshot.id).then(
-      (full) => alive && setLoaded({ id: snapshot.id, doc: docFromSnapshot(full) }),
-      (err: Error) => alive && setLoaded({ id: snapshot.id, error: err.message }),
-    );
-    return () => {
-      alive = false;
-    };
-  }, [pageId, snapshot]);
-  const current = snapshot && loaded?.id === snapshot.id ? loaded : null;
-  const doc = current && "doc" in current ? current.doc : null;
+  // The list carries no document bytes; the chosen version is fetched (and kept) when it is opened.
+  const version = useSnapshotDoc(pageId, snapshot?.id ?? null);
+  const doc = version.data ?? null;
   const [preview, setPreview] = useState<Editor | null>(null);
 
   const restore = () => {
@@ -154,7 +132,7 @@ function VersionPreview({ pageId, snapshot, onClose, liveEditor, onRestored }: {
           </header>
           <div className="thin-scroll flex-1 overflow-y-auto">
             <div className="mx-auto max-w-[720px] px-5 py-10 sm:px-8">
-              {doc ? <PreviewEditor doc={doc} onReady={setPreview} /> : current && "error" in current ? <ErrorState title="Couldn't open this version" body={current.error} /> : <InlineLoader label="Opening version" />}
+              {doc ? <PreviewEditor doc={doc} onReady={setPreview} /> : version.isError ? <ErrorState title="Couldn't open this version" body={version.error.message} /> : <InlineLoader label="Opening version" />}
             </div>
           </div>
         </motion.div>

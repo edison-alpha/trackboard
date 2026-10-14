@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Keyboard, MagnifyingGlass, PencilSimple, Plus, SidebarSimple, Star, Trash, UserCircle, UserSwitch, Inbox as InboxIcon } from "@/components/icons";
+import { FileText, Keyboard, Lock, MagnifyingGlass, PencilSimple, Plus, SidebarSimple, Star, Trash, UserCircle, UserSwitch, UsersGroup, Inbox as InboxIcon } from "@/components/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -13,20 +13,24 @@ import { Kbd } from "@/components/ui/kbd";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/menu";
 import { cx } from "@/lib/cx";
 import { useStore } from "@/lib/store";
-import { signOut } from "@/modules/profile";
+import { useSignOut } from "@/modules/profile";
+import { WorkspaceSwitcher } from "@/modules/sharing";
 import { setUi } from "@/modules/shell/lib/ui-store";
 import { NoiseSwitch, ThemeSwitch } from "@/modules/theme";
-import { ancestorsOf, childrenOf, displayTitle, favoritesOf, pageHref, trashOf, usePageActions, usePages, useWorkspace } from "@/modules/workspace";
+import { ancestorsOf, childrenOf, displayTitle, favoritesOf, pageHref, rootsOf, trashOf, usePageActions, usePages, useWorkspace, type PageMeta } from "@/modules/workspace";
 import { drag } from "../lib/drag";
 import { setExpanded } from "../lib/expanded";
 import { TreeRow } from "./tree-row";
 
-function Section({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
+function Section({ title, children, action, icon, hidden }: { title: string; children: ReactNode; action?: ReactNode; icon?: ReactNode; hidden?: boolean }) {
   const [open, setOpen] = useState(true);
+  // A header-less wrapper, used for the drop target that moves a dragged page to the top level.
+  if (hidden) return <section className="mt-1">{children}</section>;
   return (
     <section className="mt-4">
       <div className="group flex h-7 items-center justify-between pr-1 pl-2">
-        <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="rounded-md text-xs font-semibold text-ink-3 hover:text-ink">
+        <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex items-center gap-1.5 rounded-md text-xs font-semibold text-ink-3 hover:text-ink">
+          {icon}
           {title}
         </button>
         {action}
@@ -36,16 +40,40 @@ function Section({ title, children, action }: { title: string; children: ReactNo
   );
 }
 
+/** The top-level pages of one sidebar section, with their subpages nested under them. */
+function Tree({ roots, activeId, onNavigate, empty }: { roots: PageMeta[]; activeId: string | null; onNavigate: (() => void) | undefined; empty?: string }) {
+  if (roots.length === 0) {
+    return empty ? (
+      <div className="mx-1 rounded-(--radius-row) border border-dashed border-line-strong px-3 py-3 text-center text-[13px] text-ink-3">
+        <FileText size={18} className="mx-auto mb-1" />
+        {empty}
+      </div>
+    ) : null;
+  }
+  return (
+    <ul role="tree" aria-label="Page tree" className="grid grid-cols-[minmax(0,1fr)] gap-px">
+      {roots.map((p) => (
+        <TreeRow key={p.id} page={p} depth={0} activeId={activeId} {...(onNavigate && { onNavigate })} />
+      ))}
+    </ul>
+  );
+}
+
 /** Workspace navigation. Same content in the desktop column and the phone drawer. */
 export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; onCollapse?: () => void }) {
   const pages = usePages();
-  const { profile } = useWorkspace();
+  const { profile, workspace } = useWorkspace();
+  const signOut = useSignOut();
   const actions = usePageActions();
   const pathname = usePathname();
   const router = useRouter();
   const d = useStore(drag);
   const activeId = pathname.startsWith("/p/") ? pathname.slice(3) : null;
-  const roots = childrenOf(pages, null);
+  // Guests only have the pages shared with them; members also get the workspace and a private area of their own.
+  const member = workspace?.role !== "guest";
+  const workspaceRoots = rootsOf(pages, profile.id, "workspace");
+  const privateRoots = rootsOf(pages, profile.id, "private");
+  const sharedRoots = rootsOf(pages, profile.id, "shared");
   const favorites = favoritesOf(pages);
   const trashCount = trashOf(pages).length;
   const { unread } = useInbox();
@@ -55,8 +83,8 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
     if (activeId) ancestorsOf(pages, activeId).forEach((p) => setExpanded(p.id, true));
   }, [activeId, pages]);
 
-  const newPage = () => {
-    actions.create();
+  const newPage = (visibility?: "workspace") => {
+    actions.create(visibility ? { visibility } : {});
     onNavigate?.();
   };
 
@@ -71,6 +99,9 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
             <SidebarSimple size={18} />
           </IconButton>
         )}
+      </div>
+      <div className="flex px-2 pb-1">
+        <WorkspaceSwitcher {...(onNavigate && { onNavigate })} />
       </div>
 
       <div className="grid gap-1 px-2">
@@ -97,9 +128,11 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
           <span className="flex-1">Inbox</span>
           {unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-on-accent">{unread > 99 ? "99+" : unread}</span>}
         </Link>
-        <Button variant="primary" size="sm" icon={<Plus size={15} weight="bold" />} onClick={newPage} className="mt-1 justify-start">
-          New page
-        </Button>
+        {member && (
+          <Button variant="primary" size="sm" icon={<Plus size={15} weight="bold" />} onClick={() => newPage()} className="mt-1 justify-start">
+            New page
+          </Button>
+        )}
       </div>
 
       <nav aria-label="Pages" className="thin-scroll mt-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2 pb-4">
@@ -128,26 +161,41 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
           </Section>
         )}
 
-        <Section
-          title="Pages"
-          action={
-            <IconButton label="New page at the top level" size="sm" onClick={newPage}>
-              <Plus size={14} weight="bold" />
-            </IconButton>
-          }
-        >
-          {roots.length === 0 ? (
-            <div className="mx-1 rounded-(--radius-row) border border-dashed border-line-strong px-3 py-4 text-center text-[13px] text-ink-3">
-              <FileText size={20} className="mx-auto mb-1.5" />
-              No pages yet. Press <span className="font-medium text-ink-2">New page</span> to write the first one.
-            </div>
-          ) : (
-            <ul role="tree" aria-label="Page tree" className="grid grid-cols-[minmax(0,1fr)] gap-px">
-              {roots.map((p) => (
-                <TreeRow key={p.id} page={p} depth={0} activeId={activeId} onNavigate={onNavigate} />
-              ))}
-            </ul>
-          )}
+        {member && (
+          <Section
+            title="Workspace"
+            icon={<UsersGroup size={13} />}
+            action={
+              <IconButton label="New page shared with the workspace" size="sm" onClick={() => newPage("workspace")}>
+                <Plus size={14} weight="bold" />
+              </IconButton>
+            }
+          >
+            <Tree roots={workspaceRoots} activeId={activeId} onNavigate={onNavigate} empty="Pages everyone in the workspace can open." />
+          </Section>
+        )}
+
+        {member && (
+          <Section
+            title="Private"
+            icon={<Lock size={13} />}
+            action={
+              <IconButton label="New private page" size="sm" onClick={() => newPage()}>
+                <Plus size={14} weight="bold" />
+              </IconButton>
+            }
+          >
+            <Tree roots={privateRoots} activeId={activeId} onNavigate={onNavigate} empty="Only you can see these. Press New page to write the first one." />
+          </Section>
+        )}
+
+        {sharedRoots.length > 0 && (
+          <Section title="Shared with me">
+            <Tree roots={sharedRoots} activeId={activeId} onNavigate={onNavigate} />
+          </Section>
+        )}
+
+        <Section title="" hidden>
           {/* Drop here to move a page to the top level, at the end. */}
           {d.dragId && (
             <div
@@ -184,7 +232,7 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
               <MenuItem icon={<PencilSimple size={16} />} onSelect={() => setUi({ profile: true, drawer: false })}>
                 Change name and color
               </MenuItem>
-              <MenuItem icon={<UserSwitch size={16} />} onSelect={() => void signOut()}>
+              <MenuItem icon={<UserSwitch size={16} />} onSelect={() => signOut.mutate()}>
                 Sign out
               </MenuItem>
             </MenuContent>

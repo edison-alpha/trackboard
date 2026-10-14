@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowsHorizontal, Check, ImageSquare, Smiley, X } from "@/components/icons";
+import { useDebouncer } from "@tanstack/react-pacer";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button, IconButton } from "@/components/ui/button";
@@ -89,7 +90,7 @@ export function PageCover({ page }: { page: PageMeta }) {
             </IconButton>
           </div>
         </>
-      ) : (
+      ) : page.access === "view" ? null : (
         <div className="absolute top-1/2 right-3 flex -translate-y-1/2 flex-col gap-1 rounded-2xl p-1 opacity-0 glass transition-opacity group-hover/cover:opacity-100 focus-within:opacity-100">
           {image && (
             <IconButton
@@ -103,7 +104,7 @@ export function PageCover({ page }: { page: PageMeta }) {
               <ArrowsHorizontal size={17} />
             </IconButton>
           )}
-          <CoverPicker value={page.cover} onChange={(cover) => actions.edit(page.id, { cover, coverY: 50 })}>
+          <CoverPicker value={page.cover} pageId={page.id} onChange={(cover) => actions.edit(page.id, { cover, coverY: 50 })}>
             <IconButton label="Change cover" size="sm">
               <ImageSquare size={17} />
             </IconButton>
@@ -153,13 +154,13 @@ function PageMetaRow({ page }: { page: PageMeta }) {
 export function PageTitleBlock({ page, onEnter }: { page: PageMeta; onEnter: () => void }) {
   const actions = usePageActions();
   const ref = useRef<HTMLTextAreaElement>(null);
-  const [title, setTitle] = useState(page.title);
-  const editing = useRef(false);
-
-  // Follow remote renames, but never overwrite what this person is typing.
-  useEffect(() => {
-    if (!editing.current) setTitle(page.title);
-  }, [page.title]);
+  const canEdit = page.access !== "view";
+  // What this person is typing, or null when they are not: then the title is whatever the server has, so a rename
+  // by someone else shows up without ever overwriting a word being typed.
+  const [draft, setDraft] = useState<string | null>(null);
+  const title = draft ?? page.title;
+  // Typing saves after a short pause, and leaving the field saves at once.
+  const save = useDebouncer((value: string) => actions.edit(page.id, { title: value }), { wait: 600 });
 
   useEffect(() => {
     const el = ref.current;
@@ -170,7 +171,7 @@ export function PageTitleBlock({ page, onEnter }: { page: PageMeta; onEnter: () 
 
   return (
     <div className="group/header mb-6">
-      {page.icon && (
+      {page.icon && canEdit && (
         <IconPicker value={page.icon} onChange={(icon) => actions.edit(page.id, { icon })}>
           <button
             type="button"
@@ -182,7 +183,13 @@ export function PageTitleBlock({ page, onEnter }: { page: PageMeta; onEnter: () 
         </IconPicker>
       )}
 
-      <div className="mt-2 flex h-8 gap-1 opacity-0 transition-opacity group-hover/header:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100">
+      {page.icon && !canEdit && (
+        <span aria-hidden="true" className={cx("relative z-10 -ml-1.5 flex size-[76px] items-center justify-center text-[58px] leading-none", page.cover && "-mt-11")}>
+          {page.icon}
+        </span>
+      )}
+
+      <div className={cx("mt-2 flex h-8 gap-1 opacity-0 transition-opacity group-hover/header:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100", !canEdit && "hidden")}>
         {!page.icon && (
           <IconPicker value={null} onChange={(icon) => actions.edit(page.id, { icon })}>
             <Button size="sm" variant="ghost" icon={<Smiley size={16} />} className="-ml-3">
@@ -191,7 +198,7 @@ export function PageTitleBlock({ page, onEnter }: { page: PageMeta; onEnter: () 
           </IconPicker>
         )}
         {!page.cover && (
-          <CoverPicker value={null} onChange={(cover) => actions.edit(page.id, { cover })}>
+          <CoverPicker value={null} pageId={page.id} onChange={(cover) => actions.edit(page.id, { cover })}>
             <Button size="sm" variant="ghost" icon={<ImageSquare size={16} />} className={page.icon ? "-ml-3" : undefined}>
               Add cover
             </Button>
@@ -203,16 +210,17 @@ export function PageTitleBlock({ page, onEnter }: { page: PageMeta; onEnter: () 
         ref={ref}
         rows={1}
         value={title}
+        readOnly={!canEdit}
         placeholder="Untitled"
         aria-label="Page title"
-        onFocus={() => (editing.current = true)}
+        onFocus={() => setDraft(page.title)}
         onBlur={() => {
-          editing.current = false;
-          if (title !== page.title) actions.edit(page.id, { title: title.trim() });
+          save.flush();
+          setDraft(null);
         }}
         onChange={(e) => {
-          setTitle(e.target.value);
-          actions.edit(page.id, { title: e.target.value });
+          setDraft(e.target.value);
+          save.maybeExecute(e.target.value.trim());
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || (e.key === "ArrowDown" && e.currentTarget.selectionStart === title.length)) {

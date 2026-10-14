@@ -10,7 +10,7 @@ import { pickFile, uploadFile } from "@/lib/files";
 import { COVERS } from "../lib/covers";
 
 /** Choose a tone, upload an image (up to 10 MB), or remove the cover. */
-export function CoverPicker({ value, onChange, children }: { value: string | null; onChange: (cover: string | null) => void; children: ReactNode }) {
+export function CoverPicker({ value, onChange, pageId, children }: { value: string | null; onChange: (cover: string | null) => void; pageId: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -19,7 +19,7 @@ export function CoverPicker({ value, onChange, children }: { value: string | nul
     if (!file) return;
     setBusy(true);
     try {
-      onChange((await uploadFile(file)).url);
+      onChange((await uploadFile(file, pageId)).url);
       setOpen(false);
     } catch (e) {
       toast.error(`Couldn't set the cover: ${(e as Error).message}`);

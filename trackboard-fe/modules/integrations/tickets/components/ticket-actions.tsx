@@ -4,6 +4,7 @@ import { LinkSimple, Plus } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/input";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
 import { sendTicketRequest, type TicketLink } from "../service";
@@ -23,27 +24,17 @@ export function TicketActions({ open, onOpenChange, pageId, pageTitle, pageText,
   const [title, setTitle] = useState(pageTitle);
   const [description, setDescription] = useState(pageText);
   const [ticketId, setTicketId] = useState("");
-  const [busy, setBusy] = useState(false);
 
-  const submit = async () => {
-    setBusy(true);
-    try {
-      const ticket = await sendTicketRequest({
-        action: mode,
-        pageId,
-        title,
-        description,
-        ticketId: mode === "link" ? ticketId : undefined,
-      });
+  // A refusal (no edit access, a missing id) shows as a toast through the app-wide mutation error handler.
+  const send = useMutation({
+    mutationFn: sendTicketRequest,
+    onSuccess: (ticket) => {
       onLinked(ticket);
       onOpenChange(false);
       toast.success(mode === "create" ? "Task created and linked to this doc." : "Ticket linked to this doc.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Couldn't update the ticket.");
-    } finally {
-      setBusy(false);
-    }
-  };
+    },
+  });
+  const submit = () => send.mutate({ action: mode, pageId, title, description, ...(mode === "link" && { ticketId }) });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} title="Connect to a task" description="Turn this doc into work, or attach it to existing work.">
@@ -93,7 +84,7 @@ export function TicketActions({ open, onOpenChange, pageId, pageTitle, pageText,
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button variant="primary" busy={busy} disabled={mode === "create" ? !title.trim() : !ticketId.trim()} onClick={submit}>
+          <Button variant="primary" busy={send.isPending} disabled={mode === "create" ? !title.trim() : !ticketId.trim()} onClick={submit}>
             {mode === "create" ? "Create and link" : "Link ticket"}
           </Button>
         </div>

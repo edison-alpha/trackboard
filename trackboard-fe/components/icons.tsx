@@ -106,6 +106,11 @@ export const Restart = solar("restart");
 
 // People, theme, sync
 export const UserCircle = solar("user-circle");
+export const Globe = solar("global");
+export const UsersGroup = solar("users-group-rounded");
+export const Lock = solar("lock");
+export const UserPlus = solar("user-plus");
+export const Buildings = solar("buildings-2");
 export const UserSwitch = solar("users-group-two-rounded");
 export const Sun = solar("sun");
 export const Moon = solar("moon");

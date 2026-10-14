@@ -21,14 +21,16 @@ import { TableMenu } from "./table-menu";
 
 type Props = {
   collab: CollabDoc;
+  /** The page being edited; uploads are filed under it so they follow its access. */
+  pageId: string;
+  /** False for people who can only read: no editing, no menus. */
+  editable: boolean;
   user: CollabUser;
   context: Omit<EditorContext, "pickImage" | "pickFile" | "pickTable">;
   mentions: MentionSources;
   /** HTML to fill the page with the first time it opens empty. */
   template: string | null;
   onTemplateApplied: () => void;
-  /** Plain text after local edits (debounced), for search and "last edited". */
-  onLocalChange: (text: string) => void;
   /** Profile ids of people newly mentioned by this edit (typed, pasted, or restored). */
   onMention: (userIds: string[]) => void;
   onTocUpdate: (data: TableOfContentData) => void;
@@ -36,8 +38,6 @@ type Props = {
   onCommentActivate: (threadId: string) => void;
   onReady: (editor: Editor | null) => void;
 };
-
-const TEXT_DEBOUNCE_MS = 700;
 
 /** Profile ids of every person mentioned in a document ("user:<id>" mention nodes). */
 function mentionedUsers(doc: PMNode): Set<string> {
@@ -55,12 +55,11 @@ export function DocEditor(p: Props) {
   latest.current = p;
   const linkRequests = useMemo(() => createStore(0), []);
   const editorRef = useRef<Editor | null>(null);
-  const textTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [tablePicker, setTablePicker] = useState<{ editor: Editor; top: number; left: number } | null>(null);
 
   const insertImages = (editor: Editor, files: File[], pos?: number) => {
     for (const file of files) {
-      uploadFile(file).then(
+      uploadFile(file, latest.current.pageId).then(
         ({ url: src }) => {
           const at = pos ?? editor.state.selection.to;
           editor.chain().insertContentAt(at, { type: "image", attrs: { src, alt: file.name } }).focus().run();
@@ -72,7 +71,7 @@ export function DocEditor(p: Props) {
 
   const attachFiles = (editor: Editor, files: File[], pos?: number) => {
     for (const file of files) {
-      uploadFile(file).then(
+      uploadFile(file, latest.current.pageId).then(
         ({ url: src }) => {
           const at = pos ?? editor.state.selection.to;
           editor.chain().insertContentAt(at, { type: "fileBlock", attrs: { src, name: file.name, size: file.size, mime: file.type } }).focus().run();
@@ -86,6 +85,7 @@ export function DocEditor(p: Props) {
     {
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
+      editable: p.editable,
       extensions: buildExtensions({
         collab: { doc: p.collab.doc, provider: p.collab.provider, user: p.user },
         context: {
@@ -95,7 +95,7 @@ export function DocEditor(p: Props) {
             input.onchange = () => {
               const file = input.files?.[0];
               if (!file) return;
-              uploadFile(file).then(
+              uploadFile(file, latest.current.pageId).then(
                 ({ url: src }) => e.chain().focus().setFileBlock({ src, name: file.name, size: file.size, mime: file.type }).run(),
                 (err: Error) => toast.error(`Couldn't attach the file: ${err.message}`),
               );
@@ -145,11 +145,9 @@ export function DocEditor(p: Props) {
         if (remote) return;
         const added = [...mentionedUsers(e.state.doc)].filter((id) => !mentionedUsers(transaction.before).has(id));
         if (added.length) latest.current.onMention(added);
-        clearTimeout(textTimer.current);
-        textTimer.current = setTimeout(() => latest.current.onLocalChange(e.getText({ blockSeparator: "\n" }).slice(0, 20000)), TEXT_DEBOUNCE_MS);
       },
     },
-    [p.collab],
+    [p.collab, p.editable],
   );
 
   editorRef.current = editor;
@@ -158,8 +156,6 @@ export function DocEditor(p: Props) {
     latest.current.onReady(editor);
     return () => latest.current.onReady(null);
   }, [editor]);
-
-  useEffect(() => () => clearTimeout(textTimer.current), []);
 
   // Fill a brand-new page from its template once, only if nobody has typed into it yet.
   useEffect(() => {
@@ -178,6 +174,9 @@ export function DocEditor(p: Props) {
   }, [editor, p.template]);
 
   if (!editor) return <div className="tb-prose min-h-[40vh]" aria-busy="true" />;
+
+  // Readers get the page and nothing to edit it with: no toolbar, block handle or table controls.
+  if (!p.editable) return <EditorContent editor={editor} />;
 
   return (
     <>
