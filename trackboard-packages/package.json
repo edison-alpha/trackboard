@@ -1,0 +1,21 @@
+{
+  "name": "@trackboard/packages",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "api-types",
+    "doc-model"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "types:export": "node scripts/export-api-types.mjs"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.4",
+    "@types/node": "^24.13.5",
+    "typescript": "6.0.3"
+  }
+}

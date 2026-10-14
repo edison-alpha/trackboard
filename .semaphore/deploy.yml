@@ -1,0 +1,20 @@
+version: v1.0
+name: Deploy to VPS
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu2204
+
+# Same deploy as the Semaphore UI template, for Semaphore CI: ssh to the VPS and run the script.
+# Needs a secret "trackboard-vps" with VPS_HOST, VPS_USER and an ssh key file at /home/semaphore/.ssh/id_ed25519.
+blocks:
+  - name: Deploy
+    task:
+      secrets:
+        - name: trackboard-vps
+      jobs:
+        - name: ssh deploy-remote.sh
+          commands:
+            - checkout
+            - chmod 600 ~/.ssh/id_ed25519
+            - ssh -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" 'bash -s' < trackboard-be/scripts/deploy-remote.sh
