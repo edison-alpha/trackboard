@@ -12,7 +12,7 @@ import { ancestorsOf, displayTitle, favoritesOf, pageHref, recentOf, usePageActi
 
 /** One page in the feed: icon, title, the first lines of the page, and when it changed. */
 function FeedItem({ page, path }: { page: PageMeta; path: string }) {
-  const preview = page.text.replace(/\s+/g, " ").trim().slice(0, 180);
+  const preview = page.preview;
   return (
     <Link href={pageHref(page.id)} className="group flex gap-4 rounded-(--radius-card) px-4 py-4 transition-colors hover:bg-surface-2/70 sm:px-5">
       <span className="flex size-9 shrink-0 items-center justify-center text-2xl" aria-hidden="true">

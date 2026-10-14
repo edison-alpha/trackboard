@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { cx } from "@/lib/cx";
-import { PROFILE_COLORS, saveProfile, useProfile } from "@/modules/profile";
+import { PROFILE_COLORS, useProfile, useSaveProfile } from "@/modules/profile";
 
 const ROLES = ["Engineering", "Design", "Product", "Marketing", "Operations", "Founder", "Student", "Other"] as const;
 
@@ -56,7 +56,8 @@ export function OnboardingWizard() {
   const [role, setRole] = useState<string>(me?.role ?? "");
   const [focus, setFocus] = useState<string[]>(me?.focus ?? []);
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const save = useSaveProfile();
+  const saving = save.isPending;
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -90,11 +91,7 @@ export function OnboardingWizard() {
     }
     setError("");
     if (step === "look") {
-      setSaving(true);
-      saveProfile({ name, color, role: role || null, focus, onboardingDone: true }).catch((err: Error) => {
-        setError(err.message);
-        setSaving(false);
-      });
+      save.mutate({ name, color, role: role || null, focus, onboardingDone: true }, { onError: (err) => setError(err.message) });
       return;
     }
     go(index + 1);

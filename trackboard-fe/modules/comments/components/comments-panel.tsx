@@ -13,9 +13,8 @@ import { EmptyState } from "@/components/ui/states";
 import { cx } from "@/lib/cx";
 import { hasMod } from "@/lib/platform";
 import { timeAgo } from "@/lib/time";
-import { useWorkspace } from "@/modules/workspace";
-import { useThreads } from "../hooks";
-import * as threads from "../lib/threads";
+import { usePage, useWorkspace } from "@/modules/workspace";
+import { useThreadActions, useThreads } from "../hooks";
 
 export type CommentDraft = { threadId: string; quote: string };
 
@@ -71,11 +70,13 @@ function Composer({ placeholder, submitLabel, autoFocus, onSubmit, onCancel }: {
 
 /** Discussion threads anchored to text in this page. */
 export function CommentsPanel({ open, onClose, pageId, editor, draft, onDraftDone, activeId, onActivate }: Props) {
-  const { doc, profile } = useWorkspace();
+  const { profile } = useWorkspace();
   const list = useThreads(pageId);
+  const actions = useThreadActions(pageId);
+  // Anyone who can open the page can read and reply; starting, resolving and deleting threads need edit access.
+  const canEdit = ["edit", "manage"].includes(usePage(pageId)?.access ?? "view");
   const [showResolved, setShowResolved] = useState(false);
   const activeRef = useRef<HTMLLIElement>(null);
-  const author = { id: profile.id, name: profile.name, color: profile.color };
 
   const openThreads = list.filter((t) => !t.resolved);
   const resolved = list.filter((t) => t.resolved);
@@ -99,12 +100,12 @@ export function CommentsPanel({ open, onClose, pageId, editor, draft, onDraftDon
   };
 
   const resolve = (id: string, value: boolean) => {
-    threads.setResolved(doc, id, value);
+    actions.resolve.mutate({ threadId: id, resolved: value });
     editor?.commands.setCommentResolved(id, value);
   };
 
   const remove = (id: string) => {
-    threads.deleteThread(doc, id);
+    actions.removeThread.mutate(id);
     editor?.commands.unsetCommentThread(id);
     if (activeId === id) onActivate(null);
   };
@@ -145,7 +146,7 @@ export function CommentsPanel({ open, onClose, pageId, editor, draft, onDraftDon
             submitLabel="Send"
             onCancel={cancelDraft}
             onSubmit={(body) => {
-              threads.startThread(doc, { id: draft.threadId, pageId, quote: draft.quote, body, author });
+              actions.start.mutate({ id: draft.threadId, quote: draft.quote.slice(0, 280), body });
               onActivate(draft.threadId);
               onDraftDone();
             }}
@@ -174,21 +175,25 @@ export function CommentsPanel({ open, onClose, pageId, editor, draft, onDraftDon
                 <div className="cursor-pointer p-4" onClick={() => onActivate(t.id)}>
                   <div className="flex items-start gap-2">
                     <blockquote className="line-clamp-2 flex-1 border-l-2 border-line-strong pl-3 text-sm text-ink-2">{t.quote || "The commented text was deleted"}</blockquote>
-                    <IconButton size="sm" label={t.resolved ? "Reopen" : "Resolve"} onClick={() => resolve(t.id, !t.resolved)}>
-                      {t.resolved ? <ArrowCounterClockwise size={16} /> : <CheckCircle size={16} />}
-                    </IconButton>
-                    <Menu>
-                      <MenuTrigger asChild>
-                        <IconButton size="sm" label="Thread options">
-                          <DotsThree size={18} weight="bold" />
+                    {canEdit && (
+                      <>
+                        <IconButton size="sm" label={t.resolved ? "Reopen" : "Resolve"} onClick={() => resolve(t.id, !t.resolved)}>
+                          {t.resolved ? <ArrowCounterClockwise size={16} /> : <CheckCircle size={16} />}
                         </IconButton>
-                      </MenuTrigger>
-                      <MenuContent align="end">
-                        <MenuItem danger icon={<Trash size={16} />} onSelect={() => remove(t.id)}>
-                          Delete thread
-                        </MenuItem>
-                      </MenuContent>
-                    </Menu>
+                        <Menu>
+                          <MenuTrigger asChild>
+                            <IconButton size="sm" label="Thread options">
+                              <DotsThree size={18} weight="bold" />
+                            </IconButton>
+                          </MenuTrigger>
+                          <MenuContent align="end">
+                            <MenuItem danger icon={<Trash size={16} />} onSelect={() => remove(t.id)}>
+                              Delete thread
+                            </MenuItem>
+                          </MenuContent>
+                        </Menu>
+                      </>
+                    )}
                   </div>
                   <ol className="mt-3 grid gap-3">
                     {t.messages.map((m) => (
@@ -206,7 +211,7 @@ export function CommentsPanel({ open, onClose, pageId, editor, draft, onDraftDon
                             size="sm"
                             label="Delete reply"
                             className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
-                            onClick={() => threads.deleteMessage(doc, t.id, m.id)}
+                            onClick={() => actions.removeMessage.mutate(m.id)}
                           >
                             <Trash size={14} />
                           </IconButton>
@@ -216,7 +221,7 @@ export function CommentsPanel({ open, onClose, pageId, editor, draft, onDraftDon
                   </ol>
                   {!t.resolved && t.id === activeId && (
                     <div className="mt-3">
-                      <Composer placeholder="Reply" submitLabel="Reply" onSubmit={(body) => threads.reply(doc, t.id, body, author)} />
+                      <Composer placeholder="Reply" submitLabel="Reply" onSubmit={(body) => actions.reply.mutate({ threadId: t.id, body })} />
                     </div>
                   )}
                 </div>

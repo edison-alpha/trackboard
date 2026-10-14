@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { ArrowRight, FileText, Restart, Stop } from "@/components/icons";
@@ -7,25 +8,32 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { MarkdownView } from "@/components/ui/markdown-view";
-import { livePages, pageHref, usePages } from "@/modules/workspace";
+import { api } from "@/lib/api/client";
+import type { ContextPage } from "@/lib/api/types";
+import { pageHref, useWorkspace } from "@/modules/workspace";
 import { useAiRun } from "../hooks/use-ai-run";
-import { pickContext, type ContextPage } from "../lib/context";
 import { AiAvatar, AiThinking } from "./ai-presence";
 
 /** Ask a question about the workspace. The answer only uses the pages listed under it, and links to them. */
 export function AskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
-  const pages = usePages();
+  const { workspaceId } = useWorkspace();
   const { state, run, stop, retry, reset } = useAiRun();
   const [question, setQuestion] = useState("");
   const [sources, setSources] = useState<ContextPage[]>([]);
 
+  // The server picks the pages most likely to hold the answer, from the ones this person may open.
+  const gather = useMutation({
+    mutationFn: async (q: string) => ({ q, pages: (await api<{ pages: ContextPage[] }>(`/api/search/context?workspace=${encodeURIComponent(workspaceId)}&q=${encodeURIComponent(q)}`)).pages }),
+    onSuccess: ({ q, pages }) => {
+      setSources(pages);
+      void run({ action: "ask", instruction: q, pages: pages.map(({ id, title, text }) => ({ id, title, text })) });
+    },
+  });
+
   const ask = (e?: FormEvent) => {
     e?.preventDefault();
     const q = question.trim();
-    if (!q) return;
-    const ctx = pickContext(livePages(pages), q);
-    setSources(ctx);
-    void run({ action: "ask", instruction: q, pages: ctx.map(({ id, title, text }) => ({ id, title, text })) });
+    if (q) gather.mutate(q);
   };
 
   const close = (o: boolean) => {
@@ -42,7 +50,7 @@ export function AskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
     <Dialog open={open} onOpenChange={close} title="Ask your pages" description="Answers come only from pages in this workspace, with links to where each point came from." className="sm:max-w-2xl">
       <form onSubmit={ask} className="flex gap-2 px-5 pb-4">
         <Input autoFocus value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="What did we decide about the launch date?" aria-label="Your question" />
-        <Button type="submit" variant="primary" icon={<ArrowRight size={16} />} disabled={!question.trim() || state.status === "streaming"}>
+        <Button type="submit" variant="primary" icon={<ArrowRight size={16} />} disabled={!question.trim() || gather.isPending || state.status === "streaming"}>
           Ask
         </Button>
       </form>

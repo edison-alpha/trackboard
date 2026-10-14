@@ -1,50 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { allThreads, observeThreads } from "@/modules/comments";
-import { usePages, usePeople, useWorkspace } from "@/modules/workspace";
-import { useStore } from "@/lib/store";
-import { buildFeed, type InboxItem } from "./lib/feed";
-import { allMentions, observeMentions } from "./lib/mentions";
-import { loadReadState, markRead, readKeyFor, readStore } from "./lib/read-state";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { api } from "@/lib/api/client";
+import { keys } from "@/lib/api/keys";
+import type { MentionResult, Notification, NotificationList } from "@/lib/api/types";
 
-export type InboxEntry = InboxItem & { unread: boolean };
+export type InboxEntry = Notification & { unread: boolean };
 
-/** The signed-in person's notifications, with unread state. Live across tabs and collaborators. */
+/** The signed-in person's notifications and which are unread. The server keeps both, so every device agrees. */
 export function useInbox() {
-  const { doc, profile } = useWorkspace();
-  const pages = usePages();
-  const people = usePeople();
-  const [threads, setThreads] = useState(() => allThreads(doc));
-  const [mentions, setMentions] = useState(() => allMentions(doc));
-  const read = useStore(readStore);
+  const queryClient = useQueryClient();
+  const list = useQuery({ queryKey: keys.notifications, queryFn: () => api<NotificationList>("/api/notifications") });
 
-  useEffect(() => {
-    const refresh = () => setThreads(allThreads(doc));
-    refresh();
-    return observeThreads(doc, refresh);
-  }, [doc]);
+  const read = useMutation({
+    mutationFn: (v: { ids?: string[]; all?: boolean }) => api("/api/notifications/read", { body: v }),
+    onMutate: async (v) => {
+      await queryClient.cancelQueries({ queryKey: keys.notifications });
+      const previous = queryClient.getQueryData<NotificationList>(keys.notifications);
+      if (previous) {
+        const items = previous.items.map((i) => (v.all || v.ids?.includes(i.id) ? { ...i, read: true } : i));
+        queryClient.setQueryData<NotificationList>(keys.notifications, { items, unread: items.filter((i) => !i.read).length });
+      }
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => ctx?.previous && queryClient.setQueryData(keys.notifications, ctx.previous),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.notifications }),
+  });
 
-  useEffect(() => {
-    const refresh = () => setMentions(allMentions(doc));
-    refresh();
-    return observeMentions(doc, refresh);
-  }, [doc]);
+  const items = useMemo<InboxEntry[]>(() => (list.data?.items ?? []).map((i) => ({ ...i, unread: !i.read })), [list.data]);
+  return {
+    items,
+    unread: list.data?.unread ?? 0,
+    markRead: (ids: string[]) => read.mutate({ ids }),
+    markAllRead: () => read.mutate({ all: true }),
+  };
+}
 
-  // Load this profile's read state, and follow it when another tab of the same person marks things read.
-  useEffect(() => {
-    loadReadState(profile.id);
-    const onStorage = (e: StorageEvent) => e.key === readKeyFor(profile.id) && loadReadState(profile.id);
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [profile.id]);
-
-  const items = useMemo<InboxEntry[]>(
-    () => buildFeed({ me: profile.id, pages, threads, mentions, people }).map((i) => ({ ...i, unread: i.at >= read.since && !read.read.has(i.id) })),
-    [profile.id, pages, threads, mentions, people, read],
-  );
-  const unread = useMemo(() => items.filter((i) => i.unread).length, [items]);
-  const markAllRead = useCallback(() => markRead(items.filter((i) => i.unread).map((i) => i.id)), [items]);
-
-  return { items, unread, markRead, markAllRead };
+/** Tells the people named with @ that they were mentioned. The result lists anyone who cannot open the page yet. */
+export function useAnnounceMentions(pageId: string) {
+  return useMutation({
+    mutationFn: (userIds: string[]) => api<MentionResult>(`/api/pages/${pageId}/mentions`, { body: { userIds } }),
+  });
 }

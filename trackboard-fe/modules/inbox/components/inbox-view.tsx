@@ -16,6 +16,7 @@ const ACTION: Record<InboxEntry["kind"], string> = {
   comment: "commented on",
   reply: "replied in a thread on",
   mention: "mentioned you in",
+  share: "shared with you",
 };
 
 /** Everything addressed to you: comments on your pages, replies to your threads, and mentions. */

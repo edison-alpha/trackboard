@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from "react";
 import { AskDialog, toggleDock } from "@/modules/ai";
 import { CommandPalette } from "@/modules/command";
 import { ProfileDialog } from "@/modules/profile";
+import { MembersDialog } from "@/modules/sharing";
 import { ShortcutsDialog, useGlobalShortcuts } from "@/modules/shortcuts";
 import { Sidebar } from "@/modules/sidebar";
 import { TemplateDialog } from "@/modules/templates";
@@ -118,6 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <TemplateDialog open={state.templates} onOpenChange={(o) => setUi({ templates: o })} parentId={currentId} />
       <ProfileDialog open={state.profile} onOpenChange={(o) => setUi({ profile: o })} />
       <AskDialog open={state.ask} onOpenChange={(o) => setUi({ ask: o })} />
+      <MembersDialog open={state.members} onOpenChange={(o) => setUi({ members: o })} />
     </div>
   );
 }

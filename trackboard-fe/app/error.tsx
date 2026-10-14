@@ -8,7 +8,7 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
     <main className="flex min-h-dvh items-center justify-center">
       <ErrorState
         title="This screen ran into an error"
-        body={`${error.message || "Unexpected error"}. Your pages are safe in this browser's storage. Try loading the screen again.`}
+        body={`${error.message || "Unexpected error"}. Your pages are saved on the server. Try loading the screen again.`}
         action={
           <Button variant="primary" onClick={reset}>
             Try again

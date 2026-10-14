@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
-import { loadProfile, signIn, useSessionError } from "@/modules/profile";
+import { signIn, useSessionStatus } from "@/modules/profile";
 
 const SIGNIN_ERRORS: Record<string, string> = {
   cancelled: "Sign-in was cancelled. Try again when you're ready.",
@@ -14,7 +14,7 @@ const SIGNIN_ERRORS: Record<string, string> = {
 
 /** Shown when nobody is signed in: one button, Google does the rest. */
 export function SignInScreen() {
-  const serverError = useSessionError();
+  const { error: serverError, retry } = useSessionStatus();
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -55,7 +55,7 @@ export function SignInScreen() {
             Continue with Google
           </Button>
           {serverError && (
-            <Button variant="ghost" onClick={() => void loadProfile()}>
+            <Button variant="ghost" onClick={retry}>
               Try again
             </Button>
           )}

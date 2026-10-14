@@ -12,12 +12,16 @@ type UiState = {
   templates: boolean;
   ask: boolean;
   profile: boolean;
+  /** Share dialog of the page that is open. */
+  share: boolean;
+  /** Members and invites of the open workspace. */
+  members: boolean;
   panel: Panel;
 };
 
 const SIDEBAR_KEY = "tb:sidebar";
 
-export const ui = createStore<UiState>({ sidebar: true, drawer: false, palette: false, shortcuts: false, templates: false, ask: false, profile: false, panel: null });
+export const ui = createStore<UiState>({ sidebar: true, drawer: false, palette: false, shortcuts: false, templates: false, ask: false, profile: false, share: false, members: false, panel: null });
 
 export function loadUiPrefs(): void {
   if (safeStorage.get(SIDEBAR_KEY) === "closed") ui.set((s) => ({ ...s, sidebar: false }));
