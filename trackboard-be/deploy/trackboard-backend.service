@@ -1,0 +1,27 @@
+[Unit]
+Description=Trackboard backend (Elysia + Hocuspocus on Bun)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trackboard/trackboard-be
+EnvironmentFile=/home/ubuntu/trackboard/trackboard-be/.env
+ExecStart=/usr/local/bin/bun src/index.ts
+Restart=always
+RestartSec=5
+# Lets the shutdown flush of pending document writes finish before systemd gives up.
+TimeoutStopSec=20
+
+# The server is shared with other services and has under 2 GB: keep this one from starving them.
+MemoryMax=384M
+LimitNOFILE=8192
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/trackboard
+
+[Install]
+WantedBy=multi-user.target

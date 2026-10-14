@@ -1,0 +1,13 @@
+{
+  "name": "@trackboard/doc-model",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@trackboard/shared": "workspace:*",
+    "yjs": "13.6.33"
+  }
+}
