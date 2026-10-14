@@ -1,11 +1,16 @@
 import { api } from "@/lib/api/client";
 import type { FileRecord } from "@/lib/api/types";
+import { compressImage } from "@/lib/images";
 
 /** Same limit as the server, checked first so a too-large file fails before it is sent. */
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-/** Uploads a file for a page and returns where it lives. Images and attachments keep that URL, not the bytes. */
-export async function uploadFile(file: File, pageId: string): Promise<FileRecord> {
+/**
+ * Uploads a file for a page and returns where it lives. Images and attachments keep that URL, not the bytes. Photos are
+ * shrunk first (see compressImage), so the size limit applies to what is actually sent.
+ */
+export async function uploadFile(original: File, pageId: string, options: { maxEdge?: number } = {}): Promise<FileRecord> {
+  const file = await compressImage(original, options);
   if (file.size > MAX_FILE_BYTES) throw new Error(`File ${(file.size / 1024 / 1024).toFixed(1)} MB, the limit is ${MAX_FILE_BYTES / 1024 / 1024} MB`);
   const form = new FormData();
   form.set("file", file);

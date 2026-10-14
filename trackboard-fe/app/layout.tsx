@@ -12,10 +12,10 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 /** SF Pro Rounded from the owner's brand files: the "modern rounded" voice (DESIGN.md). */
 const rounded = localFont({
   src: [
-    { path: "../components/font/SF-Pro-Rounded-Regular.otf", weight: "400", style: "normal" },
-    { path: "../components/font/SF-Pro-Rounded-Medium.otf", weight: "500", style: "normal" },
-    { path: "../components/font/SF-Pro-Rounded-Semibold.otf", weight: "600", style: "normal" },
-    { path: "../components/font/SF-Pro-Rounded-Bold.otf", weight: "700", style: "normal" },
+    { path: "../components/font/SF-Pro-Rounded-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../components/font/SF-Pro-Rounded-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../components/font/SF-Pro-Rounded-Semibold.woff2", weight: "600", style: "normal" },
+    { path: "../components/font/SF-Pro-Rounded-Bold.woff2", weight: "700", style: "normal" },
   ],
   variable: "--font-rounded",
   display: "swap",

@@ -83,7 +83,7 @@ export function FilePreviewDialog() {
             {kind === "image" && (
               <div className="flex h-full min-h-[70vh] items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={file.src} alt={file.name} className="max-h-full max-w-full rounded-(--radius-card) object-contain" />
+                <img src={file.src} alt={file.name} decoding="async" className="max-h-full max-w-full rounded-(--radius-card) object-contain" />
               </div>
             )}
             {kind === "audio" && (

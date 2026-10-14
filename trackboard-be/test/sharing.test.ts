@@ -78,6 +78,18 @@ describe("private and workspace pages", () => {
     expect(await ids(budi, ana.ws)).not.toContain(page.id);
   });
 
+  test("a link to a page finds it for anyone who can open it, wherever it lives, and tells no one else", async () => {
+    const ana = await w.person("Ana-find");
+    const cara = await w.person("Cara-find");
+    const out = await w.person("Out-find");
+    const page = await createPage(ana, { title: "Brief" });
+    await w.ok(`/api/pages/${page.id}/share`, { method: "POST", cookie: ana.cookie, body: { userId: cara.id, permission: "view" } });
+    expect(await w.ok(`/api/pages/${page.id}`, { cookie: cara.cookie })).toMatchObject({ id: page.id, workspaceId: ana.ws, access: "view", title: "Brief" });
+    expect(await w.ok(`/api/pages/${page.id}`, { cookie: ana.cookie })).toMatchObject({ access: "manage" });
+    expect(await w.status(`/api/pages/${page.id}`, { cookie: out.cookie })).toBe(404);
+    expect(await w.status(`/api/pages/${page.id}`)).toBe(401);
+  });
+
   test("favorites belong to each person", async () => {
     const { ana, budi } = await team("6");
     const page = await createPage(ana);

@@ -10,7 +10,7 @@ function ImageView({ node, selected, updateAttributes, editor }: ReactNodeViewPr
     <NodeViewWrapper className="tb-media-node" data-drag-handle>
       <ResizableMedia widthPct={typeof width === "number" ? width : 100} onResize={(pct) => updateAttributes({ width: pct })} selected={selected}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt ?? ""} title={title ?? undefined} className="tb-image" draggable={false} />
+        <img src={src} alt={alt ?? ""} title={title ?? undefined} className="tb-image" draggable={false} loading="lazy" decoding="async" />
       </ResizableMedia>
       {selected && editor.isEditable && (
         <input

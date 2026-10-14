@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatCircleText, FileText, LinkSimple, Star, UserPlus } from "@/components/icons";
 import type { TableOfContentDataItem } from "@tiptap/extension-table-of-contents";
 import type { Editor } from "@tiptap/react";
@@ -18,6 +18,7 @@ import { AiComposer, AiDock } from "@/modules/ai";
 import { CommentsPanel, threadRequest, useThreads, type CommentDraft } from "@/modules/comments";
 import { useAnnounceMentions } from "@/modules/inbox";
 import { ShareDialog } from "@/modules/sharing";
+import { api } from "@/lib/api/client";
 import { keys } from "@/lib/api/keys";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
@@ -38,6 +39,7 @@ import {
   usePageActions,
   usePages,
   usePeople,
+  setActiveWorkspace,
   useWorkspace,
   type PageMeta,
 } from "@/modules/workspace";
@@ -85,6 +87,29 @@ export function PageView({ pageId }: { pageId: string }) {
   const pages = usePages();
   const actions = usePageActions();
   const router = useRouter();
+  const { workspaceId } = useWorkspace();
+
+  // A link can lead to a page in another workspace (a notification, a share): ask the server where it lives and open
+  // that workspace, instead of calling it missing.
+  const elsewhere = useQuery({
+    queryKey: ["page", pageId],
+    queryFn: () => api<PageMeta>(`/api/pages/${pageId}`),
+    enabled: !page,
+    retry: false,
+  });
+  const home = elsewhere.data?.workspaceId;
+  useEffect(() => {
+    if (home && home !== workspaceId) setActiveWorkspace(home);
+  }, [home, workspaceId]);
+
+  if (!page && !elsewhere.isError) {
+    return (
+      <>
+        <Topbar />
+        <InlineLoader label="Opening page" />
+      </>
+    );
+  }
 
   if (!page) {
     return (
@@ -92,7 +117,7 @@ export function PageView({ pageId }: { pageId: string }) {
         <Topbar />
         <EmptyState
           title="Page not found"
-          body="It was deleted for good, or the link comes from another workspace."
+          body="It was deleted for good, or you don't have access to it."
           action={
             <Button variant="primary" onClick={() => router.push("/")}>
               Back to home
