@@ -127,6 +127,7 @@ export const TextAlignRight = solar("align-right");
 export const Code = solar("code");
 export const LinkSimple = solar("link");
 export const LinkBreak = solar("unlink");
+export const ArrowSquareOut = solar("square-arrow-right-up");
 export const Quotes = solar("quote");
 export const Minus = solar("minus");
 export const Info = solar("info-circle");

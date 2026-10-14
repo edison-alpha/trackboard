@@ -2,47 +2,74 @@ import { HocuspocusProvider } from "@hocuspocus/provider";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { Awareness } from "y-protocols/awareness";
 import * as Y from "yjs";
+import { api } from "@/lib/api/client";
 import { COLLAB_URL } from "@/lib/env";
 import { createStore, type Store } from "@/lib/store";
-import { BroadcastProvider } from "./broadcast-provider";
 import { EditorProvider } from "./editor-provider";
+import { LOCAL_DB_PREFIX } from "./local-cache";
 
-/** local: IndexedDB + other tabs. connecting / online / offline: state of the trackdocs-be WebSocket. */
-export type SyncStatus = "local" | "connecting" | "online" | "offline";
+/** State of the WebSocket to trackboard-be. While it is down, edits are kept on this device and sent on reconnect. */
+export type SyncStatus = "connecting" | "online" | "offline";
 
 export type CollabDoc = {
+  /** `<workspaceId>/<local name>`: what the server stores the document under. */
   name: string;
   doc: Y.Doc;
   awareness: Awareness;
   /** Passed to Tiptap's collaboration extensions (awareness + "synced" event). */
   provider: EditorProvider;
   status: Store<SyncStatus>;
-  /** Resolves once the stored copy is loaded, so the editor never starts from an empty doc by mistake. */
+  /** Resolves once there is real content to show, so the editor never starts from an empty doc by mistake. */
   ready: Promise<void>;
   destroy: () => void;
 };
 
+/** How long a device with no offline copy waits for the server before giving up and opening what it has. */
+const FIRST_LOAD_WAIT_MS = 10_000;
+
 /**
- * Opens a shared document. Always persisted to IndexedDB (works offline, opens instantly);
- * synced through Hocuspocus when NEXT_PUBLIC_COLLAB_URL is set, otherwise between tabs.
+ * Opens a shared document. The server (trackboard-be) is the source of truth; IndexedDB keeps an offline copy so a
+ * page opens instantly and keeps working without a connection, and the two merge when the socket comes back.
  */
 export function openDoc(name: string): CollabDoc {
   const doc = new Y.Doc();
   const awareness = new Awareness(doc);
-  const persistence = new IndexeddbPersistence(`tb:${name}`, doc);
-  const status = createStore<SyncStatus>(COLLAB_URL ? "connecting" : "local");
+  const persistence = new IndexeddbPersistence(`${LOCAL_DB_PREFIX}${name}`, doc);
+  const status = createStore<SyncStatus>("connecting");
 
-  let remote: { destroy: () => void };
-  if (COLLAB_URL) {
-    const hp = new HocuspocusProvider({ url: COLLAB_URL, name, document: doc, awareness });
-    hp.on("status", ({ status: s }: { status: string }) => status.set(s === "connected" ? "online" : s === "connecting" ? "connecting" : "offline"));
-    remote = hp;
-  } else {
-    remote = new BroadcastProvider(name, doc, awareness);
-  }
+  let serverSynced!: () => void;
+  let serverRefused!: (e: Error) => void;
+  const fromServer = new Promise<void>((resolve, reject) => {
+    serverSynced = resolve;
+    serverRefused = reject;
+  });
+  fromServer.catch(() => undefined);
+
+  const remote = new HocuspocusProvider({
+    url: COLLAB_URL,
+    name,
+    document: doc,
+    awareness,
+    // Fetched on every (re)connect: a token lives five minutes, the session behind it thirty days.
+    token: async () => (await api<{ token: string }>("/api/collab-token")).token,
+    onStatus: ({ status: s }: { status: string }) => status.set(s === "connected" ? "online" : s === "connecting" ? "connecting" : "offline"),
+    onSynced: () => serverSynced(),
+    onAuthenticationFailed: () => {
+      status.set("offline");
+      serverRefused(new Error("You don't have access to this page."));
+    },
+  });
 
   const provider = new EditorProvider(awareness);
-  const ready = persistence.whenSynced.then(() => provider.markSynced());
+  const ready = persistence.whenSynced.then(async () => {
+    // Content already on this device is real content: show it now and let the server's changes merge in. A device that
+    // has never opened this page waits for the server, or the editor would start empty and seed a second copy.
+    const hasOfflineCopy = Y.encodeStateAsUpdate(doc).length > 2;
+    if (!hasOfflineCopy) {
+      await Promise.race([fromServer, new Promise<void>((resolve) => setTimeout(resolve, FIRST_LOAD_WAIT_MS))]);
+    }
+    provider.markSynced();
+  });
 
   return {
     name,
@@ -59,36 +86,4 @@ export function openDoc(name: string): CollabDoc {
       doc.destroy();
     },
   };
-}
-
-/** Reads a stored doc once without joining live sync (duplicate page). */
-export async function readStoredDoc(name: string): Promise<Uint8Array> {
-  const doc = new Y.Doc();
-  const persistence = new IndexeddbPersistence(`tb:${name}`, doc);
-  await persistence.whenSynced;
-  const update = Y.encodeStateAsUpdate(doc);
-  await persistence.destroy();
-  doc.destroy();
-  return update;
-}
-
-/** Writes an update into a stored doc that may not be open anywhere yet. */
-export async function writeStoredDoc(name: string, update: Uint8Array): Promise<void> {
-  const doc = new Y.Doc();
-  const persistence = new IndexeddbPersistence(`tb:${name}`, doc);
-  await persistence.whenSynced;
-  Y.applyUpdate(doc, update);
-  // y-indexeddb stores updates asynchronously; let the write land before closing.
-  await new Promise((r) => setTimeout(r, 80));
-  await persistence.destroy();
-  doc.destroy();
-}
-
-/** Removes a doc's stored copy (permanent delete from trash). */
-export async function deleteStoredDoc(name: string): Promise<void> {
-  const doc = new Y.Doc();
-  const persistence = new IndexeddbPersistence(`tb:${name}`, doc);
-  await persistence.whenSynced;
-  await persistence.clearData();
-  doc.destroy();
 }

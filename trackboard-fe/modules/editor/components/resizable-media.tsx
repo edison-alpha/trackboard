@@ -25,6 +25,18 @@ export function ResizableMedia({
   children: ReactNode;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const pct = Math.min(MAX_PCT, Math.max(MIN_PCT, widthPct));
+
+  // Arrow keys resize a focused handle by 5%; Home/End jump to the limits. The edge only decides the direction.
+  const onKey = (edge: "left" | "right") => (e: React.KeyboardEvent) => {
+    const grow = edge === "right" ? "ArrowRight" : "ArrowLeft";
+    const shrink = edge === "right" ? "ArrowLeft" : "ArrowRight";
+    const next = e.key === grow ? pct + 5 : e.key === shrink ? pct - 5 : e.key === "Home" ? MIN_PCT : e.key === "End" ? MAX_PCT : null;
+    if (next === null) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onResize(Math.min(MAX_PCT, Math.max(MIN_PCT, next)));
+  };
 
   const startDrag = (edge: "left" | "right") => (e: React.PointerEvent) => {
     e.preventDefault();
@@ -53,10 +65,10 @@ export function ResizableMedia({
 
   return (
     <div ref={trackRef} className="tb-media-track" contentEditable={false}>
-      <div className={cx("tb-resizable", selected && "is-selected", className)} style={{ width: `${Math.min(MAX_PCT, Math.max(MIN_PCT, widthPct))}%` }}>
+      <div className={cx("tb-resizable", selected && "is-selected", className)} style={{ width: `${pct}%` }}>
         {children}
-        <span className="tb-resizable-handle tb-resizable-handle-left" role="presentation" onPointerDown={startDrag("left")} />
-        <span className="tb-resizable-handle tb-resizable-handle-right" role="presentation" onPointerDown={startDrag("right")} />
+        <span className="tb-resizable-handle tb-resizable-handle-left" role="slider" tabIndex={0} aria-label="Media width" aria-orientation="horizontal" aria-valuemin={MIN_PCT} aria-valuemax={MAX_PCT} aria-valuenow={pct} aria-valuetext={`${pct}% of the column`} onKeyDown={onKey("left")} onPointerDown={startDrag("left")} />
+        <span className="tb-resizable-handle tb-resizable-handle-right" role="slider" tabIndex={0} aria-label="Media width" aria-orientation="horizontal" aria-valuemin={MIN_PCT} aria-valuemax={MAX_PCT} aria-valuenow={pct} aria-valuetext={`${pct}% of the column`} onKeyDown={onKey("right")} onPointerDown={startDrag("right")} />
       </div>
     </div>
   );

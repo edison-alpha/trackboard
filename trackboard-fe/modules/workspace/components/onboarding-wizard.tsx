@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { cx } from "@/lib/cx";
-import { PROFILE_COLORS, saveProfile } from "@/modules/profile";
+import { PROFILE_COLORS, saveProfile, useProfile } from "@/modules/profile";
 
 const ROLES = ["Engineering", "Design", "Product", "Marketing", "Operations", "Founder", "Student", "Other"] as const;
 
@@ -46,13 +46,15 @@ const TITLES: Record<Step, string> = {
 };
 
 /** First-run setup: welcome, who you are, what you focus on, theme. Saves the profile on the last step. */
-export function OnboardingWizard({ onCancel }: { onCancel?: () => void }) {
+export function OnboardingWizard() {
+  // Google already told the server who this is; start from that name and the colour assigned to it.
+  const me = useProfile();
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
-  const [name, setName] = useState("");
-  const [color, setColor] = useState<string>(PROFILE_COLORS[0]);
-  const [role, setRole] = useState<string>("");
-  const [focus, setFocus] = useState<string[]>([]);
+  const [name, setName] = useState(me?.name ?? "");
+  const [color, setColor] = useState<string>(me?.color ?? PROFILE_COLORS[0]);
+  const [role, setRole] = useState<string>(me?.role ?? "");
+  const [focus, setFocus] = useState<string[]>(me?.focus ?? []);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -89,7 +91,10 @@ export function OnboardingWizard({ onCancel }: { onCancel?: () => void }) {
     setError("");
     if (step === "look") {
       setSaving(true);
-      saveProfile({ name, color, role: role || undefined, focus });
+      saveProfile({ name, color, role: role || null, focus, onboardingDone: true }).catch((err: Error) => {
+        setError(err.message);
+        setSaving(false);
+      });
       return;
     }
     go(index + 1);
@@ -108,11 +113,6 @@ export function OnboardingWizard({ onCancel }: { onCancel?: () => void }) {
     <main className="flex min-h-dvh flex-col bg-bg px-5 py-6 sm:px-10">
       <header className="mx-auto flex w-full max-w-xl items-center justify-between">
         <Logo />
-        {onCancel && step === "welcome" && (
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            Use existing profile
-          </Button>
-        )}
       </header>
 
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center py-10">

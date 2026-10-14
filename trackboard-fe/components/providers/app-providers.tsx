@@ -7,18 +7,17 @@ import { Toaster } from "sonner";
 import { PromptHost } from "@/components/ui/prompt";
 import { loadDock } from "@/modules/ai/lib/dock-store";
 import { FilePreviewDialog } from "@/modules/editor/components/file-preview-dialog";
-import { loadProfile, watchProfileAcrossTabs } from "@/modules/profile";
+import { loadProfile } from "@/modules/profile";
 import { loadUiPrefs } from "@/modules/shell";
 import { loadExpanded } from "@/modules/sidebar";
 
-/** App-wide providers and the one-time reads of per-browser preferences. */
+/** App-wide providers, the session read, and the one-time reads of per-browser preferences. */
 export function AppProviders({ children }: { children: ReactNode }) {
   useEffect(() => {
-    loadProfile();
+    void loadProfile();
     loadUiPrefs();
     loadExpanded();
     loadDock();
-    return watchProfileAcrossTabs();
   }, []);
 
   return (

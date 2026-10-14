@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { deleteStoredDoc, readStoredDoc, writeStoredDoc } from "@/modules/collab";
+import { api } from "@/lib/api/client";
+import { dropLocalDocs } from "@/modules/collab";
 import { useStore } from "@/lib/store";
 import { useWorkspace } from "./components/workspace-provider";
 import * as ops from "./lib/pages";
-import { pageDocName, type PageMeta, type Person } from "./lib/types";
+import { pageDocName, scopedDocName, type PageMeta, type Person } from "./lib/types";
 
 export function usePages(): ReadonlyMap<string, PageMeta> {
   return useStore(useWorkspace().pages);
@@ -47,7 +48,7 @@ export function usePageActions() {
       });
       ops.updatePage(doc, copyId, { cover: source.cover, coverY: source.coverY, fullWidth: source.fullWidth, pageWidth: source.pageWidth, text: source.text }, profile.id);
       try {
-        await writeStoredDoc(pageDocName(copyId), await readStoredDoc(pageDocName(id)));
+        await api(`/api/pages/${id}/duplicate`, { body: { to: copyId } });
         router.push(pageHref(copyId));
       } catch {
         toast.error("Couldn't copy the page content, so the copy starts empty.");
@@ -68,9 +69,10 @@ export function usePageActions() {
   const deleteForever = useCallback(
     async (id: string) => {
       const ids = ops.deletePageForever(doc, id);
-      await Promise.allSettled(ids.map((pid) => deleteStoredDoc(pageDocName(pid))));
+      // Documents, versions and tickets go from the server; the offline copies go from this device.
+      await Promise.allSettled([api("/api/pages/purge", { body: { ids } }), dropLocalDocs(ids.map((pid) => scopedDocName(profile.workspaceId, pageDocName(pid))))]);
     },
-    [doc],
+    [doc, profile.workspaceId],
   );
 
   return useMemo(

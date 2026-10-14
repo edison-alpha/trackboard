@@ -36,3 +36,6 @@ export type PageMap = ReadonlyMap<string, PageMeta>;
 
 export const pageDocName = (id: string) => `page:${id}`;
 export const WORKSPACE_DOC = "workspace:default";
+
+/** The name the server stores a document under: scoped by workspace so one person's pages never open in another's. */
+export const scopedDocName = (workspaceId: string, local: string) => `${workspaceId}/${local}`;

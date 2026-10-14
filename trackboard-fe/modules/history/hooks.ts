@@ -3,12 +3,12 @@
 import { ySyncPluginKey } from "@tiptap/y-tiptap";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type * as Y from "yjs";
-import { listSnapshots, saveSnapshot, type Snapshot } from "./lib/snapshots";
+import { listSnapshots, saveSnapshot, type SnapshotMeta } from "./lib/snapshots";
 
 const AUTO_EVERY_MS = 5 * 60 * 1000;
 
 /** Saves an automatic version every few minutes while this tab has made local edits. */
-export function useAutoSnapshot(pageId: string, doc: Y.Doc | null, author: Snapshot["author"]): void {
+export function useAutoSnapshot(pageId: string, doc: Y.Doc | null, author: SnapshotMeta["author"]): void {
   const dirty = useRef(false);
   const authorRef = useRef(author);
   authorRef.current = author;
@@ -36,7 +36,7 @@ export function useAutoSnapshot(pageId: string, doc: Y.Doc | null, author: Snaps
 }
 
 export function useSnapshots(pageId: string, open: boolean) {
-  const [state, setState] = useState<{ status: "loading" } | { status: "ready"; list: Snapshot[] } | { status: "error" }>({ status: "loading" });
+  const [state, setState] = useState<{ status: "loading" } | { status: "ready"; list: SnapshotMeta[] } | { status: "error" }>({ status: "loading" });
   const reload = useCallback(() => {
     listSnapshots(pageId).then(
       (list) => setState({ status: "ready", list }),

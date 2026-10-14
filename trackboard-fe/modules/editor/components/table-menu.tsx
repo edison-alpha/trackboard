@@ -2,7 +2,7 @@
 
 import { ArrowsInLineHorizontal, Columns, DotsThree, Plus, Rows, SquareSplitHorizontal, Table, Trash } from "@/components/icons";
 import { CellSelection } from "@tiptap/pm/tables";
-import type { Editor } from "@tiptap/react";
+import { useEditorState, type Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { useEffect, useRef, useState } from "react";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
@@ -12,6 +12,10 @@ import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/compo
  * also has to accept a CellSelection and not just a plain caret. */
 export function TableMenu({ editor }: { editor: Editor }) {
   const run = (fn: (c: ReturnType<Editor["chain"]>) => ReturnType<Editor["chain"]>) => fn(editor.chain().focus()).run();
+  const can = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({ merge: e.can().mergeCells(), split: e.can().splitCell() }),
+  });
   return (
     <>
       <BubbleMenu
@@ -67,10 +71,10 @@ export function TableMenu({ editor }: { editor: Editor }) {
           <Table size={16} /> Cell
         </MenuTrigger>
         <MenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
-          <MenuItem icon={<ArrowsInLineHorizontal size={16} />} onSelect={() => run((c) => c.mergeCells())}>
+          <MenuItem icon={<ArrowsInLineHorizontal size={16} />} disabled={!can.merge} onSelect={() => run((c) => c.mergeCells())}>
             Merge selected cells
           </MenuItem>
-          <MenuItem icon={<SquareSplitHorizontal size={16} />} onSelect={() => run((c) => c.splitCell())}>
+          <MenuItem icon={<SquareSplitHorizontal size={16} />} disabled={!can.split} onSelect={() => run((c) => c.splitCell())}>
             Split cell
           </MenuItem>
           <MenuSeparator />

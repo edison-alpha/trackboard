@@ -29,32 +29,6 @@
 .tb-prose .tb-heading-text {
   display: inline;
 }
-/* Notion-style fold toggle: sits in the heading's own left margin, revealed on hover so it never
-   competes with the generic drag handle further out in the gutter. */
-.tb-heading-fold {
-  position: absolute;
-  top: 0.15em;
-  left: -22px;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  color: var(--ink-3);
-  opacity: 0;
-  transition: opacity 100ms ease;
-}
-.tb-heading:hover .tb-heading-fold,
-.tb-heading-fold:focus-visible {
-  opacity: 1;
-}
-.tb-heading-fold:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
-.tb-heading.is-folded .tb-heading-fold {
-  color: var(--ink-2);
-}
 .tb-heading.is-folded .tb-heading-text::after {
   content: "···";
   margin-left: 0.4em;
@@ -62,13 +36,10 @@
   font-weight: 400;
   letter-spacing: 0;
 }
-.tb-folded-hidden {
-  display: none;
-}
-@media (max-width: 640px) {
-  .tb-heading-fold {
-    opacity: 1;
-    left: -20px;
+/* Folding is a reading aid: on paper every section prints in full. */
+@media screen {
+  .tb-folded-hidden {
+    display: none;
   }
 }
 .tb-prose h1 {
@@ -440,6 +411,25 @@
 }
 .tb-resizable-handle:hover {
   opacity: 0.4 !important;
+}
+.tb-resizable-handle:focus-visible {
+  opacity: 0.6 !important;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tb-image-alt {
+  display: block;
+  width: min(100%, 420px);
+  margin: 6px auto 0;
+  padding: 5px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+}
+.tb-image-alt::placeholder {
+  color: var(--ink-3);
 }
 .tb-resizable-handle-left {
   left: 6px;

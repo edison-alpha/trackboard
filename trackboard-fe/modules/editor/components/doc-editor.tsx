@@ -7,7 +7,7 @@ import { ySyncPluginKey } from "@tiptap/y-tiptap";
 import { useEffect, useMemo, useRef } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { readFile, readImage } from "@/lib/files";
+import { uploadFile } from "@/lib/files";
 import { openAi } from "@/modules/ai/lib/ai-store";
 import { createStore } from "@/lib/store";
 import type { CollabDoc } from "@/modules/collab";
@@ -16,6 +16,7 @@ import type { MentionSources } from "../extensions/mention";
 import type { EditorContext } from "../lib/slash-items";
 import { BlockHandle } from "./block-handle";
 import { BubbleMenu } from "./bubble-menu";
+import { LinkMenu } from "./link-menu";
 import { TableMenu } from "./table-menu";
 
 type Props = {
@@ -59,12 +60,24 @@ export function DocEditor(p: Props) {
 
   const insertImages = (editor: Editor, files: File[], pos?: number) => {
     for (const file of files) {
-      readImage(file).then(
-        (src) => {
+      uploadFile(file).then(
+        ({ url: src }) => {
           const at = pos ?? editor.state.selection.to;
           editor.chain().insertContentAt(at, { type: "image", attrs: { src, alt: file.name } }).focus().run();
         },
         (err: Error) => toast.error(`Couldn't insert the image: ${err.message}`),
+      );
+    }
+  };
+
+  const attachFiles = (editor: Editor, files: File[], pos?: number) => {
+    for (const file of files) {
+      uploadFile(file).then(
+        ({ url: src }) => {
+          const at = pos ?? editor.state.selection.to;
+          editor.chain().insertContentAt(at, { type: "fileBlock", attrs: { src, name: file.name, size: file.size, mime: file.type } }).focus().run();
+        },
+        (err: Error) => toast.error(`Couldn't attach ${file.name}: ${err.message}`),
       );
     }
   };
@@ -82,8 +95,8 @@ export function DocEditor(p: Props) {
             input.onchange = () => {
               const file = input.files?.[0];
               if (!file) return;
-              readFile(file).then(
-                (src) => e.chain().focus().setFileBlock({ src, name: file.name, size: file.size, mime: file.type }).run(),
+              uploadFile(file).then(
+                ({ url: src }) => e.chain().focus().setFileBlock({ src, name: file.name, size: file.size, mime: file.type }).run(),
                 (err: Error) => toast.error(`Couldn't attach the file: ${err.message}`),
               );
             };
@@ -104,6 +117,7 @@ export function DocEditor(p: Props) {
         },
         mentions: p.mentions,
         onImageFiles: (files, pos) => editorRef.current && insertImages(editorRef.current, files, pos),
+        onAttachFiles: (files, pos) => editorRef.current && attachFiles(editorRef.current, files, pos),
         onTocUpdate: (d) => latest.current.onTocUpdate(d),
         onCommentActivate: (id) => latest.current.onCommentActivate(id),
         onLinkRequest: () => linkRequests.set((n) => n + 1),
@@ -150,8 +164,17 @@ export function DocEditor(p: Props) {
   // Fill a brand-new page from its template once, only if nobody has typed into it yet.
   useEffect(() => {
     if (!editor || !p.template) return;
-    if (editor.isEmpty) editor.commands.setContent(p.template);
-    latest.current.onTemplateApplied();
+    const template = p.template;
+    let cancelled = false;
+    // Node views render through flushSync, which React forbids while an effect is running.
+    queueMicrotask(() => {
+      if (cancelled || editor.isDestroyed) return;
+      if (editor.isEmpty) editor.commands.setContent(template);
+      latest.current.onTemplateApplied();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [editor, p.template]);
 
   if (!editor) return <div className="tb-prose min-h-[40vh]" aria-busy="true" />;
@@ -160,6 +183,7 @@ export function DocEditor(p: Props) {
     <>
       <EditorContent editor={editor} />
       <BubbleMenu editor={editor} linkRequests={linkRequests} onComment={() => p.onComment(editor)} />
+      <LinkMenu editor={editor} linkRequests={linkRequests} />
       <TableMenu editor={editor} />
       <BlockHandle editor={editor} />
       {tablePicker && <TablePicker {...tablePicker} onClose={() => setTablePicker(null)} />}
@@ -171,6 +195,9 @@ const TABLE_PICKER_SIZE = 8;
 
 function TablePicker({ editor, top, left, onClose }: { editor: Editor; top: number; left: number; onClose: () => void }) {
   const [hovered, setHovered] = useState({ rows: 3, cols: 3 });
+  const root = useRef<HTMLDivElement>(null);
+  const hoveredRef = useRef(hovered);
+  hoveredRef.current = hovered;
 
   const insert = (rows: number, cols: number) => {
     editor
@@ -181,8 +208,38 @@ function TablePicker({ editor, top, left, onClose }: { editor: Editor; top: numb
     onClose();
   };
 
+  // The editor keeps focus while the picker is open, so keys and outside clicks are read from the document.
+  useEffect(() => {
+    const clamp = (n: number) => Math.min(TABLE_PICKER_SIZE, Math.max(1, n));
+    const onKey = (e: KeyboardEvent) => {
+      const { rows, cols } = hoveredRef.current;
+      const move = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key];
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        insert(rows, cols);
+      } else if (move) {
+        e.preventDefault();
+        setHovered({ rows: clamp(rows + move[0]!), cols: clamp(cols + move[1]!) });
+      }
+    };
+    const onDown = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("keydown", onKey, true);
+    document.addEventListener("pointerdown", onDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      document.removeEventListener("pointerdown", onDown, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div
+      ref={root}
       className="floating fixed z-[60] w-[184px] rounded-2xl p-3 text-ink"
       style={{ top, left }}
       role="dialog"

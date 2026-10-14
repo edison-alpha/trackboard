@@ -1,23 +1,29 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { DownloadSimple, X } from "@/components/icons";
 import { Button, IconButton } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { formatBytes } from "@/lib/files";
-import { decodeDataUrlText, fileExt, fileIcon, fileLabel, filePreviewKind } from "@/lib/file-type";
+import { fileExt, fileIcon, fileLabel, filePreviewKind } from "@/lib/file-type";
 import { closeFilePreview, useFilePreview } from "../lib/file-preview-store";
 
-/** The body for text, code and Markdown: the file is a data: URL already in the document, so no fetch is needed. */
+/** The body for text, code and Markdown: fetched from the server with the session, since the file is no longer inside the document. */
 function TextPreview({ src }: { src: string }) {
-  const text = useMemo(() => {
-    try {
-      return decodeDataUrlText(src);
-    } catch {
-      return null;
-    }
+  const [text, setText] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    setText(undefined);
+    fetch(src, { credentials: "include" })
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
+      .then((t) => alive && setText(t))
+      .catch(() => alive && setText(null));
+    return () => {
+      alive = false;
+    };
   }, [src]);
+  if (text === undefined) return <p className="p-4 text-sm text-ink-3">Loading…</p>;
   if (text === null) return <Unsupported reason="This file couldn't be read as text." />;
   return <pre className="thin-scroll h-full overflow-auto rounded-(--radius-card) bg-surface-2 p-4 text-[13px] leading-relaxed whitespace-pre-wrap text-ink">{text}</pre>;
 }

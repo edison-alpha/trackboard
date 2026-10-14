@@ -184,8 +184,8 @@ export function Sidebar({ onNavigate, onCollapse }: { onNavigate?: () => void; o
               <MenuItem icon={<PencilSimple size={16} />} onSelect={() => setUi({ profile: true, drawer: false })}>
                 Change name and color
               </MenuItem>
-              <MenuItem icon={<UserSwitch size={16} />} onSelect={signOut}>
-                Switch person in this tab
+              <MenuItem icon={<UserSwitch size={16} />} onSelect={() => void signOut()}>
+                Sign out
               </MenuItem>
             </MenuContent>
           </Menu>

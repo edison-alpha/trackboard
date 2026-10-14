@@ -50,5 +50,5 @@ export const Callout = Node.create({
     };
   },
 
-  renderMarkdown: (node, h) => `> **${{ info: "Note", warn: "Warning", ok: "Success" }[node.attrs?.tone as CalloutTone] ?? "Note"}**\n> ${h.renderChildren(node.content ?? [], "\n").replace(/\n/g, "\n> ")}\n`,
+  renderMarkdown: (node, h) => `> **${{ info: "Note", warn: "Warning", ok: "Success" }[node.attrs?.tone as CalloutTone] ?? "Note"}**\n>\n> ${h.renderChildren(node.content ?? [], "\n").replace(/\n/g, "\n> ")}\n`,
 });

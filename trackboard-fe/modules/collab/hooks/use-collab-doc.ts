@@ -3,13 +3,17 @@
 import { useEffect, useState } from "react";
 import { openDoc, type CollabDoc } from "../lib/open-doc";
 
-export type CollabDocState = { status: "loading" } | { status: "ready"; collab: CollabDoc } | { status: "error"; error: Error };
+export type CollabDocState = { status: "idle" } | { status: "loading" } | { status: "ready"; collab: CollabDoc } | { status: "error"; error: Error };
 
-/** Opens a shared doc for the lifetime of the component and closes it on unmount or name change. */
-export function useCollabDoc(name: string): CollabDocState {
-  const [state, setState] = useState<CollabDocState>({ status: "loading" });
+/** Opens a shared doc for the lifetime of the component and closes it on unmount or name change. A null name opens nothing. */
+export function useCollabDoc(name: string | null): CollabDocState {
+  const [state, setState] = useState<CollabDocState>(name ? { status: "loading" } : { status: "idle" });
 
   useEffect(() => {
+    if (!name) {
+      setState({ status: "idle" });
+      return;
+    }
     let alive = true;
     setState({ status: "loading" });
     let collab: CollabDoc;

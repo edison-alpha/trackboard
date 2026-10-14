@@ -1,20 +1,15 @@
-export const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+import { api } from "@/lib/api/client";
+import type { FileRecord } from "@/lib/api/types";
 
-export class FileTooLargeError extends Error {
-  constructor(public readonly bytes: number) {
-    super(`File ${(bytes / 1024 / 1024).toFixed(1)} MB, the limit is ${MAX_IMAGE_BYTES / 1024 / 1024} MB`);
-  }
-}
+/** Same limit as the server, checked first so a too-large file fails before it is sent. */
+export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-/** Reads an image into a data URL. Images live inside the document until trackdocs-be adds file storage. */
-export function readImage(file: File): Promise<string> {
-  if (file.size > MAX_IMAGE_BYTES) return Promise.reject(new FileTooLargeError(file.size));
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error ?? new Error("Couldn't read the file"));
-    reader.readAsDataURL(file);
-  });
+/** Uploads a file to the server and returns where it lives. Images and attachments keep that URL, not the bytes. */
+export async function uploadFile(file: File): Promise<FileRecord> {
+  if (file.size > MAX_FILE_BYTES) throw new Error(`File ${(file.size / 1024 / 1024).toFixed(1)} MB, the limit is ${MAX_FILE_BYTES / 1024 / 1024} MB`);
+  const form = new FormData();
+  form.set("file", file);
+  return api<FileRecord>("/api/files", { form });
 }
 
 /** Triggers a browser download for generated text (Markdown export). */
@@ -45,19 +40,6 @@ export function slugify(text: string): string {
       .replace(/[\s_]+/g, "-")
       .slice(0, 60) || "page"
   );
-}
-
-export const MAX_FILE_BYTES = 5 * 1024 * 1024;
-
-/** Reads any file into a data URL for an attachment block (kept in the document until trackdocs-be adds storage). */
-export function readFile(file: File): Promise<string> {
-  if (file.size > MAX_FILE_BYTES) return Promise.reject(new Error(`File ${(file.size / 1024 / 1024).toFixed(1)} MB, the limit is ${MAX_FILE_BYTES / 1024 / 1024} MB`));
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error ?? new Error("Couldn't read the file"));
-    reader.readAsDataURL(file);
-  });
 }
 
 export function formatBytes(n: number): string {

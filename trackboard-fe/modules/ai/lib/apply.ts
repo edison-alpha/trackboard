@@ -1,4 +1,6 @@
 import type { Editor } from "@tiptap/react";
+import { absolutePositionToRelativePosition, relativePositionToAbsolutePosition, ySyncPluginKey } from "@tiptap/y-tiptap";
+import type * as Y from "yjs";
 import type { AiApply } from "./actions";
 
 export type Range = { from: number; to: number };
@@ -75,4 +77,30 @@ export function applyResult(editor: Editor, mode: AiApply, text: string, rawRang
     case "none":
       return;
   }
+}
+
+type Mapping = Parameters<typeof absolutePositionToRelativePosition>[2];
+type SyncState = { doc: Y.Doc; type: Y.XmlFragment; binding?: { mapping: Mapping } };
+
+/**
+ * Follows a range while collaborators keep typing. Remote edits rewrite the ProseMirror doc, so a plain
+ * position would drift; anchoring it to the shared document keeps it on the same text. Without a live
+ * shared document the range stays as given.
+ */
+export function trackRange(editor: Editor, range: Range): { read: () => Range } {
+  const sync = ySyncPluginKey.getState(editor.state) as SyncState | undefined;
+  if (!sync?.binding || range.from === range.to) return { read: () => range };
+  const from = absolutePositionToRelativePosition(range.from, sync.type, sync.binding.mapping);
+  const to = absolutePositionToRelativePosition(range.to, sync.type, sync.binding.mapping);
+  return {
+    read: () => {
+      const now = ySyncPluginKey.getState(editor.state) as SyncState | undefined;
+      if (!now?.binding) return range;
+      const a = relativePositionToAbsolutePosition(now.doc, now.type, from, now.binding.mapping);
+      const b = relativePositionToAbsolutePosition(now.doc, now.type, to, now.binding.mapping);
+      if (a == null || b == null) return range;
+      const max = editor.state.doc.content.size;
+      return { from: Math.min(a, max), to: Math.min(Math.max(a, b), max) };
+    },
+  };
 }

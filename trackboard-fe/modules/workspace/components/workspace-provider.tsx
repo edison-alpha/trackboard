@@ -10,10 +10,11 @@ import { useCollabDoc, type CollabDoc } from "@/modules/collab";
 import { useProfile, type Profile } from "@/modules/profile";
 import type { Store } from "@/lib/store";
 import { createPagesStore } from "../lib/workspace-store";
-import { WORKSPACE_DOC, type PageMeta } from "../lib/types";
+import { scopedDocName, WORKSPACE_DOC, type PageMeta } from "../lib/types";
 import { seedWorkspace } from "../lib/seed";
 import { rememberPerson } from "../lib/pages";
-import { Onboarding } from "./onboarding";
+import { SignInScreen } from "./onboarding";
+import { OnboardingWizard } from "./onboarding-wizard";
 
 type WorkspaceContextValue = {
   collab: CollabDoc;
@@ -34,12 +35,13 @@ export function useWorkspace(): WorkspaceContextValue {
 const MIN_BOOT_MS = 450;
 
 /**
- * Opens the workspace doc, asks for a profile on the first visit, and shows the loading screen
+ * Signs the person in, runs first-time setup, opens their workspace doc, and shows the loading screen
  * only while that is actually happening.
  */
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const profile = useProfile();
-  const state = useCollabDoc(WORKSPACE_DOC);
+  const needsSetup = !!profile && !profile.onboardingDone;
+  const state = useCollabDoc(profile && !needsSetup ? scopedDocName(profile.workspaceId, WORKSPACE_DOC) : null);
   const [floorPassed, setFloorPassed] = useState(false);
 
   useEffect(() => {
@@ -74,20 +76,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [collab, profile]);
 
   const value = useMemo(
-    () => (collab && pagesStore && profile ? { collab, doc: collab.doc, pages: pagesStore.store, profile } : null),
-    [collab, pagesStore, profile],
+    () => (collab && pagesStore && profile && !needsSetup ? { collab, doc: collab.doc, pages: pagesStore.store, profile } : null),
+    [collab, pagesStore, profile, needsSetup],
   );
 
-  const booting = !floorPassed || profile === undefined || (profile !== null && state.status === "loading");
+  const booting = !floorPassed || profile === undefined || (profile !== null && !needsSetup && state.status === "loading");
 
   return (
     <>
       <AnimatePresence>{booting && <LoadingScreen key="boot" status={profile === undefined ? "Getting ready" : "Opening your workspace"} />}</AnimatePresence>
-      {!booting && profile === null && <Onboarding />}
+      {!booting && profile === null && <SignInScreen />}
+      {!booting && needsSetup && <OnboardingWizard />}
       {!booting && state.status === "error" && (
         <ErrorState
           title="Couldn't open the workspace"
-          body={`The browser blocked access to its storage (${state.error.message}). Leave private browsing or allow storage for this site, then reload.`}
+          body={`Trackdocs couldn't load your workspace (${state.error.message}). Check your connection, then reload.`}
           action={
             <Button variant="primary" onClick={() => location.reload()}>
               Reload

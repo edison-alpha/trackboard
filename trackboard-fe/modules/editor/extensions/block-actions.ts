@@ -30,7 +30,7 @@ export function topBlockAt(editor: Editor, pos?: number): { node: PMNode; start:
 
 /**
  * Block-level commands on top of Tiptap's defaults, shared by the keyboard, the slash menu and the block menu:
- * Mod+Shift+↑/↓ move a block, Mod+D duplicates it, Mod+K with a selection edits a link, Mod+J opens AI.
+ * Mod+Shift+↑/↓ move a block, Mod+D duplicates it, Mod+K with a selection, or the caret in a link, edits the link, Mod+J opens AI.
  */
 export const BlockActions = Extension.create<Options>({
   name: "blockActions",
@@ -87,7 +87,11 @@ export const BlockActions = Extension.create<Options>({
         return true;
       },
       "Mod-k": () => {
-        if (this.editor.state.selection.empty) return false;
+        if (this.editor.state.selection.empty) {
+          // A caret inside a link edits that link; anywhere else Mod+K belongs to the command palette.
+          if (!this.editor.isActive("link")) return false;
+          this.editor.commands.extendMarkRange("link");
+        }
         this.options.onLinkRequest();
         return true;
       },
