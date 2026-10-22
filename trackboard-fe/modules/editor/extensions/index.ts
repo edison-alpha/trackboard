@@ -30,6 +30,7 @@ import { Callout } from "./callout";
 import { CommentMark } from "./comment-mark";
 import { createMention, type MentionSources } from "./mention";
 import { Bookmark } from "./nodes/bookmark";
+import { CanvasBlock } from "./nodes/canvas";
 import { Column, Columns } from "./nodes/columns";
 import { DateChip } from "./nodes/date-chip";
 import { Embed } from "./nodes/embed";
@@ -125,6 +126,7 @@ export function buildExtensions(o: BuildOptions): AnyExtension[] {
     Column,
     Embed,
     Bookmark,
+    CanvasBlock,
     FileBlock,
     DateChip,
     TocBlock,
