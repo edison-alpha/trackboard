@@ -24,6 +24,7 @@ import {
   MathOperations,
   Mention,
   Minus,
+  Palette,
   Paperclip,
   Quotes,
   Smiley,
@@ -203,6 +204,8 @@ export const SLASH_ITEMS: SlashItem[] = [
       })),
   },
   { id: "bookmark", title: "Bookmark", hint: "Link shown as a card", group: "Embeds", icon: BookmarkCard, keywords: ["bookmark", "link", "card", "url", "web"], run: (e, r, ctx) => (chain(e, r).run(), withUrl(ctx, "Link to bookmark", (url) => e.chain().focus().setBookmark({ url }).run())) },
+
+  { id: "canvas", title: "Canvas", hint: "Draw shapes, arrows and sketches, like a whiteboard", group: "Advanced", icon: Palette, keywords: ["canvas", "draw", "drawing", "whiteboard", "sketch", "diagram", "excalidraw", "shapes"], run: (e, r) => chain(e, r).setCanvas().run() },
 
   { id: "cols-2", title: "2 columns", hint: "Two blocks side by side", group: "Layout", icon: ColumnsLayout, keywords: ["columns", "layout", "side", "grid", "2"], run: (e, r) => chain(e, r).insertColumns(2).run() },
   { id: "cols-3", title: "3 columns", hint: "Three blocks side by side", group: "Layout", icon: ColumnsLayout, keywords: ["columns", "layout", "grid", "3"], run: (e, r) => chain(e, r).insertColumns(3).run() },

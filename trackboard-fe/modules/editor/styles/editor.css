@@ -706,6 +706,53 @@
   background: var(--surface-3);
 }
 
+/* Canvas block */
+.tb-canvas {
+  margin: 0.75em 0;
+}
+.tb-canvas-frame {
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: #fff;
+}
+.tb-canvas.is-selected .tb-canvas-frame {
+  border-color: var(--accent);
+}
+.tb-canvas-open {
+  display: block;
+  width: 100%;
+  height: 320px;
+  cursor: pointer;
+}
+.tb-canvas-empty {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: #888;
+  font-size: 14px;
+}
+.tb-canvas-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.tb-canvas-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.tb-canvas-bar button:hover {
+  background: var(--surface-3);
+}
+
 /* Bookmark and file cards */
 .tb-bookmark,
 .tb-file {
